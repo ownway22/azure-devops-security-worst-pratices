@@ -6,22 +6,25 @@ requires-python = ">=3.11"
 dependencies = [
     "flask",
     "requests",
-    # Vulnerable packages for Dependency Scanning demo:
-    "PyYAML==5.3.1",         # CVE-2020-14343 (Critical 9.8) — arbitrary code execution via full_load()
-    "Pillow==9.5.0",         # CVE-2023-50447 (High 8.1)     — arbitrary code execution via ImageMath.eval()
-                             # CVE-2024-28219 (High)          — buffer overflow in affected versions < 10.3.0
-                             # CVE-2023-44271 (High)          — Denial of Service via uncontrolled resource use (< 10.0.0)
-                             # CVE-2023-41074  (High)         — bundled libwebp vulnerability (< 10.0.1)
-                             # Note: multiple CVEs demonstrate real-world dependency risk depth
-    "urllib3==2.0.6",        # CVE-2023-45803 (Medium 4.4)   — redirect strips Authorization header
-                             # CVE-2024-37891 (Medium 4.4)    — decompression-bomb safeguard bypass via redirect (< 2.6.3)
-                             # CVE-2024-37895 (Medium)        — streaming API improperly handles highly compressed data (< 2.6.0)
-                             # Note: bumped from 2.0.3 → 2.0.6 to fix cross-origin Cookie header stripping
-                             #       (CVE affecting 2.0.0–2.0.5) which had functional impact on the SSRF endpoint.
-                             #       Remaining CVEs (decompression-bomb, Authorization stripping) preserved for demo.
-                             # Note: urllib3==1.26.4 (CVE-2021-33503) was originally specified but
-                             #       is incompatible with Python 3.12 due to bundled six.moves removal.
-    "requests==2.31.0",      # CVE-2023-32681 (Medium 6.1)   — proxy credential leak via redirect
+    # ── urllib3: pin to patched version to prevent decompression-bomb CVEs ──────
+    # requests==2.31.0 allows urllib3<3; without an explicit floor the resolver
+    # may pick an older vulnerable release.  urllib3>=2.6.3 fixes CVE-2024-37891
+    # (decompression-bomb bypass via redirect) and CVE-2024-37895 (streaming API
+    # highly-compressed data).
+    "urllib3>=2.6.3",
+    # ── Intentionally vulnerable packages for Dependency Scanning demo ──────────
+    # Each package is pinned to a version with at least one published CVE so that
+    # GHAzDO Dependency Scanning (and the GitHub Advisory Database) will raise
+    # alerts.  Only packages whose CVEs do NOT affect this running demo app's
+    # attack surface are kept vulnerable; packages with exploitable runtime risk
+    # (Pillow buffer-overflow, urllib3 decompression-bombs) have been patched.
+    #
+    "PyYAML==5.3.1",         # CVE-2020-14343 (Critical 9.8) — arbitrary code execution via yaml.full_load()
+    "requests==2.31.0",      # CVE-2023-32681 (Medium 6.1)   — proxy Authorization header leaked on redirect
+    "certifi==2022.12.7",    # CVE-2023-37920 (Medium)        — e-Tugra root certificate not yet removed from trust store
+    "setuptools==65.5.0",    # CVE-2022-40897 (Medium 5.5)   — ReDoS via crafted package URL
+                             # CVE-2024-6345  (High 8.8)     — command injection via package URL (< 70.0.0)
+                             # CVE-2025-47273 (High)          — path traversal in PackageIndex.download (< 78.1.1)
 ]
 
 [build-system]

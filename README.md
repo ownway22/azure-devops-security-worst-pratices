@@ -109,20 +109,21 @@ git push origin main
 | `config/settings.yaml` | GitHub Personal Access Token | `github_personal_access_token` |
 | `.env.example` | PostgreSQL 連線字串 | `postgres_connection_string` |
 
-### Dependency Scanning 警告（≥ 7 條）
+### Dependency Scanning 警告（≥ 5 條）
 
 | 套件 | 版本 | CVE | 嚴重程度 | 說明 |
 |------|------|-----|----------|------|
 | PyYAML | 5.3.1 | CVE-2020-14343 | Critical (9.8) | `full_load()` 允許任意程式碼執行 |
-| Pillow | 9.5.0 | CVE-2023-50447 | High (8.1) | `ImageMath.eval()` 任意程式碼執行 |
-| Pillow | 9.5.0 | CVE-2024-28219 | High | 緩衝區溢位（< 10.3.0）|
-| Pillow | 9.5.0 | CVE-2023-44271 | High | 拒絕服務（< 10.0.0）|
-| urllib3 | 2.0.6 | CVE-2023-45803 | Medium (4.4) | 重定向時 Authorization 標頭未移除 |
-| urllib3 | 2.0.6 | CVE-2024-37891 | Medium (4.4) | 跟隨 HTTP 重定向時解壓炸彈防護被繞過（< 2.6.3）|
-| urllib3 | 2.0.6 | CVE-2024-37895 | Medium | 串流 API 未正確處理高度壓縮資料（< 2.6.0）|
-| requests | 2.31.0 | CVE-2023-32681 | Medium (6.1) | 代理認證資訊洩漏 |
+| requests | 2.31.0 | CVE-2023-32681 | Medium (6.1) | 重定向時代理 Authorization 標頭洩漏 |
+| certifi | 2022.12.7 | CVE-2023-37920 | Medium | 信任鏈中仍保留 e-Tugra 根憑證 |
+| setuptools | 65.5.0 | CVE-2022-40897 | Medium (5.5) | 惡意套件 URL 的正規表示式拒絕服務（ReDoS）|
+| setuptools | 65.5.0 | CVE-2024-6345 | High (8.8) | 透過套件 URL 的命令注入（< 70.0.0）|
+| setuptools | 65.5.0 | CVE-2025-47273 | High | PackageIndex.download 路徑穿越（< 78.1.1）|
 
-> **注意**：`urllib3==2.0.6` 取代原始規格的 `2.0.3`，修正了跨來源重定向時 Cookie 標頭未移除的問題（影響 2.0.0–2.0.5，對 SSRF 展示端點有實際功能影響）。其餘 CVE 保留用於展示目的。
+> **注意**：`Pillow==9.5.0` 和 `urllib3==2.0.6` 已移除並替換為 `certifi` 和 `setuptools`。
+> Pillow 的緩衝區溢位（CVE-2024-28219）與 urllib3 的解壓炸彈 CVE（CVE-2024-37891、CVE-2024-37895）
+> 均為可在執行期被利用的漏洞，不適合保留在本機執行的展示專案中。
+> 替換套件的 CVE 僅在套件安裝流程中觸發，不影響執行中的 Flask 展示應用。
 
 ---
 
