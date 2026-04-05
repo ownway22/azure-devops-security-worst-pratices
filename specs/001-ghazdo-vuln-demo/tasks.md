@@ -23,10 +23,10 @@
 
 **目的**：專案初始化、目錄結構建立、相依套件安裝
 
-- [ ] T001 根據 plan.md 專案結構建立目錄：`src/`、`src/vulnerabilities/`、`config/`
-- [ ] T001a [P] 建立 .gitignore — 排除 `.venv/`、`__pycache__/`、`*.db`、`*.pyc`、`.env`（確保 GHAzDO 掃描不受虛擬環境和暫存檔干擾，同時保留 `.env.example` 在版控中供 Secret Scanning 偵測）
-- [ ] T002 建立 pyproject.toml：專案名稱 `ghazdo-vuln-demo`、Python `>=3.11`、相依套件包含 `flask`、`requests`（供 SSRF 端點使用），以及 4 個有漏洞的套件版本鎖定：`PyYAML==5.3.1`（CVE-2020-14343, Critical）、`Pillow==9.5.0`（CVE-2023-50447, High）、`urllib3==1.26.4`（CVE-2021-33503, High）、`Jinja2==3.1.2`（CVE-2024-22195, Medium）；每個有漏洞套件旁加 CVE 註解
-- [ ] T003 執行 `uv sync` 建立虛擬環境並驗證所有套件安裝成功；若 Jinja2==3.1.2 與 Flask 版本衝突，改用 `requests==2.25.1`（CVE-2023-32681）作為替代（依 research.md 備註）
+- [x] T001 根據 plan.md 專案結構建立目錄：`src/`、`src/vulnerabilities/`、`config/`
+- [x] T001a [P] 建立 .gitignore — 排除 `.venv/`、`__pycache__/`、`*.db`、`*.pyc`、`.env`（確保 GHAzDO 掃描不受虛擬環境和暫存檔干擾，同時保留 `.env.example` 在版控中供 Secret Scanning 偵測）
+- [x] T002 建立 pyproject.toml：專案名稱 `ghazdo-vuln-demo`、Python `>=3.11`、相依套件包含 `flask`、`requests`（供 SSRF 端點使用），以及 4 個有漏洞的套件版本鎖定：`PyYAML==5.3.1`（CVE-2020-14343, Critical）、`Pillow==9.5.0`（CVE-2023-50447, High）、`urllib3==1.26.4`（CVE-2021-33503, High）、`Jinja2==3.1.2`（CVE-2024-22195, Medium）；每個有漏洞套件旁加 CVE 註解
+- [x] T003 執行 `uv sync` 建立虛擬環境並驗證所有套件安裝成功；若 Jinja2==3.1.2 與 Flask 版本衝突，改用 `requests==2.25.1`（CVE-2023-32681）作為替代（依 research.md 備註）
 
 ---
 
@@ -36,10 +36,10 @@
 
 **⚠️ 重要**：此階段完成前不可開始任何使用者故事工作
 
-- [ ] T004 [P] 建立 src/__init__.py — 空的套件初始化檔案
-- [ ] T005 [P] 建立 src/vulnerabilities/__init__.py — 空的套件初始化檔案
-- [ ] T006 建立 src/database.py — 使用 Python 內建 `sqlite3` 模組初始化 SQLite 資料庫（記憶體模式或檔案模式）；建立 `users` 資料表（`id INTEGER PRIMARY KEY`, `name TEXT`, `email TEXT`）並插入 3-5 筆範例資料；提供 `get_db_connection()` 函式供 SQL Injection 端點使用
-- [ ] T007 建立 src/app.py — Flask 應用入口：建立 Flask app 實例、定義 GET `/` 首頁路由（HTML 頁面列出所有漏洞端點及說明）、預留 Blueprint 註冊區段（Phase 3 填入）；使用 `if __name__ == "__main__"` 啟動 `app.run(debug=True)`，並支援 `python -m src.app` 執行
+- [x] T004 [P] 建立 src/__init__.py — 空的套件初始化檔案
+- [x] T005 [P] 建立 src/vulnerabilities/__init__.py — 空的套件初始化檔案
+- [x] T006 建立 src/database.py — 使用 Python 內建 `sqlite3` 模組初始化 SQLite 資料庫（記憶體模式或檔案模式）；建立 `users` 資料表（`id INTEGER PRIMARY KEY`, `name TEXT`, `email TEXT`）並插入 3-5 筆範例資料；提供 `get_db_connection()` 函式供 SQL Injection 端點使用
+- [x] T007 建立 src/app.py — Flask 應用入口：建立 Flask app 實例、定義 GET `/` 首頁路由（HTML 頁面列出所有漏洞端點及說明）、預留 Blueprint 註冊區段（Phase 3 填入）；使用 `if __name__ == "__main__"` 啟動 `app.run(debug=True)`，並支援 `python -m src.app` 執行
 
 **檢查點**：基礎建設就緒 — `uv run python -m src.app` 可啟動空的 Flask 應用並顯示首頁
 
@@ -53,13 +53,13 @@
 
 ### 使用者故事 1 的實作
 
-- [ ] T008 [P] [US1] 在 src/vulnerabilities/sql_injection.py 實作 SQL Injection 端點 — 建立 Flask Blueprint `sql_injection_bp`；GET `/api/users` 接收 query 參數 `name`，將其直接以 f-string 串接至 SQL 查詢 `f"SELECT * FROM users WHERE name = '{name}'"` 並透過 `database.get_db_connection()` 執行；回傳 JSON `{"users": [...]}`；檔案頂部加 `# 漏洞：SQL Injection (CWE-89) — py/sql-injection` 註解
-- [ ] T009 [P] [US1] 在 src/vulnerabilities/command_injection.py 實作 Command Injection 端點 — 建立 Flask Blueprint `command_injection_bp`；GET `/api/ping` 接收 query 參數 `host`，將其直接傳入 `os.system(f"ping -c 1 {host}")`（或 `subprocess.call(f"ping -c 1 {host}", shell=True)`）；回傳 JSON `{"result": output}`；檔案頂部加 `# 漏洞：OS Command Injection (CWE-78) — py/command-line-injection` 註解
-- [ ] T010 [P] [US1] 在 src/vulnerabilities/path_traversal.py 實作 Path Traversal 端點 — 建立 Flask Blueprint `path_traversal_bp`；GET `/api/files` 接收 query 參數 `filename`，直接以 `open(filename, "r")` 讀取檔案內容而不驗證路徑；回傳 text/plain 檔案內容；檔案頂部加 `# 漏洞：Path Traversal (CWE-22) — py/path-injection` 註解
-- [ ] T011 [P] [US1] 在 src/vulnerabilities/ssrf.py 實作 SSRF 端點 — 建立 Flask Blueprint `ssrf_bp`；GET `/api/fetch` 接收 query 參數 `url`，直接傳入 `requests.get(url)` 而不驗證目標位址；回傳 JSON `{"status_code": int, "content": str}`；檔案頂部加 `# 漏洞：Server-Side Request Forgery (CWE-918) — py/full-ssrf` 註解
-- [ ] T012 [P] [US1] 在 src/vulnerabilities/xss.py 實作 Reflected XSS 端點 — 建立 Flask Blueprint `xss_bp`；GET `/api/search` 接收 query 參數 `q`，使用 `flask.make_response()` 回傳 HTML 字串 `f"<h1>搜尋結果：{q}</h1>"` 而不進行輸出編碼；設定 Content-Type 為 text/html；檔案頂部加 `# 漏洞：Reflected XSS (CWE-79) — py/reflective-xss` 註解
-- [ ] T013 [P] [US1] 在 src/vulnerabilities/insecure_deserialization.py 實作 Insecure Deserialization 端點 — 建立 Flask Blueprint `deserialization_bp`；POST `/api/import` 從 request body 接收 base64 編碼的資料，使用 `pickle.loads(base64.b64decode(data))` 反序列化而不驗證來源；回傳 JSON `{"imported": repr(obj)}`；檔案頂部加 `# 漏洞：Insecure Deserialization (CWE-502) — py/unsafe-deserialization` 註解
-- [ ] T014 [US1] 更新 src/app.py — 匯入並註冊全部 6 個漏洞 Blueprint（`sql_injection_bp`、`command_injection_bp`、`path_traversal_bp`、`ssrf_bp`、`xss_bp`、`deserialization_bp`）；更新 GET `/` 首頁列出全部 7 個端點（含路由、漏洞類型、CWE 編號和簡短說明）
+- [x] T008 [P] [US1] 在 src/vulnerabilities/sql_injection.py 實作 SQL Injection 端點 — 建立 Flask Blueprint `sql_injection_bp`；GET `/api/users` 接收 query 參數 `name`，將其直接以 f-string 串接至 SQL 查詢 `f"SELECT * FROM users WHERE name = '{name}'"` 並透過 `database.get_db_connection()` 執行；回傳 JSON `{"users": [...]}`；檔案頂部加 `# 漏洞：SQL Injection (CWE-89) — py/sql-injection` 註解
+- [x] T009 [P] [US1] 在 src/vulnerabilities/command_injection.py 實作 Command Injection 端點 — 建立 Flask Blueprint `command_injection_bp`；GET `/api/ping` 接收 query 參數 `host`，將其直接傳入 `os.system(f"ping -c 1 {host}")`（或 `subprocess.call(f"ping -c 1 {host}", shell=True)`）；回傳 JSON `{"result": output}`；檔案頂部加 `# 漏洞：OS Command Injection (CWE-78) — py/command-line-injection` 註解
+- [x] T010 [P] [US1] 在 src/vulnerabilities/path_traversal.py 實作 Path Traversal 端點 — 建立 Flask Blueprint `path_traversal_bp`；GET `/api/files` 接收 query 參數 `filename`，直接以 `open(filename, "r")` 讀取檔案內容而不驗證路徑；回傳 text/plain 檔案內容；檔案頂部加 `# 漏洞：Path Traversal (CWE-22) — py/path-injection` 註解
+- [x] T011 [P] [US1] 在 src/vulnerabilities/ssrf.py 實作 SSRF 端點 — 建立 Flask Blueprint `ssrf_bp`；GET `/api/fetch` 接收 query 參數 `url`，直接傳入 `requests.get(url)` 而不驗證目標位址；回傳 JSON `{"status_code": int, "content": str}`；檔案頂部加 `# 漏洞：Server-Side Request Forgery (CWE-918) — py/full-ssrf` 註解
+- [x] T012 [P] [US1] 在 src/vulnerabilities/xss.py 實作 Reflected XSS 端點 — 建立 Flask Blueprint `xss_bp`；GET `/api/search` 接收 query 參數 `q`，使用 `flask.make_response()` 回傳 HTML 字串 `f"<h1>搜尋結果：{q}</h1>"` 而不進行輸出編碼；設定 Content-Type 為 text/html；檔案頂部加 `# 漏洞：Reflected XSS (CWE-79) — py/reflective-xss` 註解
+- [x] T013 [P] [US1] 在 src/vulnerabilities/insecure_deserialization.py 實作 Insecure Deserialization 端點 — 建立 Flask Blueprint `deserialization_bp`；POST `/api/import` 從 request body 接收 base64 編碼的資料，使用 `pickle.loads(base64.b64decode(data))` 反序列化而不驗證來源；回傳 JSON `{"imported": repr(obj)}`；檔案頂部加 `# 漏洞：Insecure Deserialization (CWE-502) — py/unsafe-deserialization` 註解
+- [x] T014 [US1] 更新 src/app.py — 匯入並註冊全部 6 個漏洞 Blueprint（`sql_injection_bp`、`command_injection_bp`、`path_traversal_bp`、`ssrf_bp`、`xss_bp`、`deserialization_bp`）；更新 GET `/` 首頁列出全部 7 個端點（含路由、漏洞類型、CWE 編號和簡短說明）
 
 **檢查點**：`uv run python -m src.app` 可啟動 Flask 應用，存取每個端點回傳預期格式的回應；6 個漏洞模組各觸發對應的 CodeQL 查詢
 
@@ -73,9 +73,9 @@
 
 ### 使用者故事 2 的實作
 
-- [ ] T015 [P] [US2] 建立 src/config.py — 應用設定模組；嵌入 Azure Service Principal Client Secret 作為變數賦值：`AZURE_CLIENT_SECRET = "wJa..."`（40 字元 Base64 類字串，格式符合 `azure_active_directory_application_secret` 偵測模式）；同時包含 `AZURE_TENANT_ID` 和 `AZURE_CLIENT_ID` 等設定值以呈現真實場景；檔案頂部加註解說明這是刻意嵌入的假機密
-- [ ] T016 [P] [US2] 建立 config/settings.yaml — 應用設定檔；嵌入 GitHub Personal Access Token：`github_token: "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"`（`ghp_` 前綴 + 36 個英數字元，格式符合 `github_personal_access_token` 偵測模式）；同時包含其他合理的設定項目（如 app name、log level）以呈現真實設定檔
-- [ ] T017 [P] [US2] 建立 .env.example — 環境變數範本；嵌入 PostgreSQL 連線字串：`DATABASE_URL=postgresql://admin:SuperSecret123!@db.example.com:5432/production`（格式符合 `postgres_connection_string` 偵測模式）；同時包含其他環境變數（如 `FLASK_ENV`、`SECRET_KEY`）以呈現真實的 .env 範本
+- [x] T015 [P] [US2] 建立 src/config.py — 應用設定模組；嵌入 Azure Service Principal Client Secret 作為變數賦值：`AZURE_CLIENT_SECRET = "wJa..."`（40 字元 Base64 類字串，格式符合 `azure_active_directory_application_secret` 偵測模式）；同時包含 `AZURE_TENANT_ID` 和 `AZURE_CLIENT_ID` 等設定值以呈現真實場景；檔案頂部加註解說明這是刻意嵌入的假機密
+- [x] T016 [P] [US2] 建立 config/settings.yaml — 應用設定檔；嵌入 GitHub Personal Access Token：`github_token: "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"`（`ghp_` 前綴 + 36 個英數字元，格式符合 `github_personal_access_token` 偵測模式）；同時包含其他合理的設定項目（如 app name、log level）以呈現真實設定檔
+- [x] T017 [P] [US2] 建立 .env.example — 環境變數範本；嵌入 PostgreSQL 連線字串：`DATABASE_URL=postgresql://admin:SuperSecret123!@db.example.com:5432/production`（格式符合 `postgres_connection_string` 偵測模式）；同時包含其他環境變數（如 `FLASK_ENV`、`SECRET_KEY`）以呈現真實的 .env 範本
 
 **檢查點**：3 個檔案中各包含 1 個格式正確的假機密，`git diff` 可確認機密字串存在於版控中
 
@@ -89,8 +89,8 @@
 
 ### 使用者故事 3 的實作
 
-- [ ] T018 [US3] 驗證並完善 pyproject.toml 中的相依套件設定 — 確認 4 個有漏洞套件版本鎖定正確（PyYAML==5.3.1、Pillow==9.5.0、urllib3==1.26.4、Jinja2==3.1.2）；執行 `uv sync` 確認無版本衝突；如有 Jinja2/Flask 衝突則套用 research.md 備註方案將 Jinja2 替換為 `requests==2.25.1`（CVE-2023-32681）
-- [ ] T019 [US3] 建立 azure-pipelines.yml — 依 research.md §4 的官方範本：`trigger: [main]`；`pool: vmImage: ubuntu-latest`；三個 steps：`AdvancedSecurity-Codeql-Init@1`（inputs: `languages: "python"`, `enableAutomaticCodeQLInstall: true`）、`AdvancedSecurity-Dependency-Scanning@1`（無額外 inputs）、`AdvancedSecurity-Codeql-Analyze@1`（無額外 inputs）；加入 YAML 註解說明每個 task 對應的 GHAzDO 功能
+- [x] T018 [US3] 驗證並完善 pyproject.toml 中的相依套件設定 — 確認 4 個有漏洞套件版本鎖定正確（PyYAML==5.3.1、Pillow==9.5.0、urllib3==1.26.4、Jinja2==3.1.2）；執行 `uv sync` 確認無版本衝突；如有 Jinja2/Flask 衝突則套用 research.md 備註方案將 Jinja2 替換為 `requests==2.25.1`（CVE-2023-32681）
+- [x] T019 [US3] 建立 azure-pipelines.yml — 依 research.md §4 的官方範本：`trigger: [main]`；`pool: vmImage: ubuntu-latest`；三個 steps：`AdvancedSecurity-Codeql-Init@1`（inputs: `languages: "python"`, `enableAutomaticCodeQLInstall: true`）、`AdvancedSecurity-Dependency-Scanning@1`（無額外 inputs）、`AdvancedSecurity-Codeql-Analyze@1`（無額外 inputs）；加入 YAML 註解說明每個 task 對應的 GHAzDO 功能
 
 **檢查點**：`azure-pipelines.yml` 語法正確，pyproject.toml 中的 4 個有漏洞套件可安裝
 
@@ -104,7 +104,7 @@
 
 ### 使用者故事 4 的實作
 
-- [ ] T020 [US4] 撰寫修復循環展示指南段落 — 內容包含：(1) 如何在 GHAzDO Advanced Security 頁面選擇 SQL Injection 警告、(2) 閱讀 GHAzDO 提供的漏洞描述和修復建議、(3) 將 `f"SELECT * FROM users WHERE name = '{name}'"` 改為參數化查詢 `"SELECT * FROM users WHERE name = ?"` 搭配 `(name,)` 參數、(4) `git commit -m "fix(security): 修復 SQL Injection 漏洞" && git push`、(5) 等待 Pipeline 重新掃描並驗證警告消失；此段落將於 Phase 7 整合至 README.md
+- [x] T020 [US4] 撰寫修復循環展示指南段落 — 內容包含：(1) 如何在 GHAzDO Advanced Security 頁面選擇 SQL Injection 警告、(2) 閱讀 GHAzDO 提供的漏洞描述和修復建議、(3) 將 `f"SELECT * FROM users WHERE name = '{name}'"` 改為參數化查詢 `"SELECT * FROM users WHERE name = ?"` 搭配 `(name,)` 參數、(4) `git commit -m "fix(security): 修復 SQL Injection 漏洞" && git push`、(5) 等待 Pipeline 重新掃描並驗證警告消失；此段落將於 Phase 7 整合至 README.md
 
 **檢查點**：修復指南段落內容完整，包含具體的程式碼修改範例和 git 操作步驟
 
@@ -114,9 +114,9 @@
 
 **目的**：建立面向混合觀眾的 README、驗證整體專案可運行
 
-- [ ] T021 建立 README.md — 整合以下內容：(1) 專案概述（目的：展示 GHAzDO 三大功能）、(2) 目錄結構說明（依 plan.md 專案結構）、(3) 快速入門指南（依 quickstart.md：先決條件、本地設定 `uv sync`、`uv run python -m src.app`）、(4) Azure DevOps 設定指南（依 quickstart.md：啟用 Secret Protection + Code Security、設定 Pipeline）、(5) 預期掃描結果摘要表（6 條 Code Scanning + 3 條 Secret Scanning + 4 條 Dependency Scanning）、(6) 修復循環展示指南（整合 T020 內容）、(7) 價值摘要表格（依 quickstart.md：面向管理層的三大功能風險與價值對照）
-- [ ] T022 驗證 `uv run python -m src.app` 可啟動 Flask 應用且無 ImportError 或 SyntaxError — 存取 GET `/` 確認首頁列出全部 7 個端點；存取各端點確認回傳預期格式的回應
-- [ ] T023 執行 quickstart.md 驗證流程 — 從乾淨目錄模擬：`git clone` → `uv sync` → `uv run python -m src.app`，確認所有步驟可正常執行且無遺漏
+- [x] T021 建立 README.md — 整合以下內容：(1) 專案概述（目的：展示 GHAzDO 三大功能）、(2) 目錄結構說明（依 plan.md 專案結構）、(3) 快速入門指南（依 quickstart.md：先決條件、本地設定 `uv sync`、`uv run python -m src.app`）、(4) Azure DevOps 設定指南（依 quickstart.md：啟用 Secret Protection + Code Security、設定 Pipeline）、(5) 預期掃描結果摘要表（6 條 Code Scanning + 3 條 Secret Scanning + 4 條 Dependency Scanning）、(6) 修復循環展示指南（整合 T020 內容）、(7) 價值摘要表格（依 quickstart.md：面向管理層的三大功能風險與價值對照）
+- [x] T022 驗證 `uv run python -m src.app` 可啟動 Flask 應用且無 ImportError 或 SyntaxError — 存取 GET `/` 確認首頁列出全部 7 個端點；存取各端點確認回傳預期格式的回應
+- [x] T023 執行 quickstart.md 驗證流程 — 從乾淨目錄模擬：`git clone` → `uv sync` → `uv run python -m src.app`，確認所有步驟可正常執行且無遺漏
 
 ---
 

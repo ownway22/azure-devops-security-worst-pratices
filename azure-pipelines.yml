@@ -1,0 +1,26 @@
+trigger:
+  - main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  # Step 1: Initialize CodeQL for Python code scanning
+  # This step configures CodeQL to analyze the Python source code for vulnerabilities.
+  - task: AdvancedSecurity-Codeql-Init@1
+    inputs:
+      languages: "python"
+      enableAutomaticCodeQLInstall: true
+
+  # Step 2: Scan for vulnerable dependencies (SCA)
+  # Checks pyproject.toml dependencies against the GitHub Advisory Database.
+  # Requires 'Code Security' to be enabled in the repository settings.
+  - task: AdvancedSecurity-Dependency-Scanning@1
+
+  # Step 3: Run CodeQL analysis and upload results
+  # Analyzes the code for the vulnerabilities initialized in Step 1.
+  - task: AdvancedSecurity-Codeql-Analyze@1
+
+  # Note: Secret Scanning does NOT require a pipeline task.
+  # It is enabled at the repository level via Advanced Security > Secret Protection
+  # and automatically scans all commits pushed to the repository.

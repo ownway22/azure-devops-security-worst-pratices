@@ -1,0 +1,16 @@
+# ⚠️ 警告：此檔案含有刻意嵌入的假機密，用於展示 GHAzDO Secret Scanning 功能。
+# 以下 token 為虛假值，不具任何實際效力，僅用於觸發 Secret Scanning 偵測。
+
+app:
+  name: ghazdo-vuln-demo
+  version: "0.1.0"
+  log_level: info
+  environment: production
+
+# Secret #2 — GitHub Personal Access Token (classic)
+# Format: ghp_ prefix + 36 alphanumeric characters matching 'github_personal_access_token'
+github_token: "ghp_A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8"
+
+integrations:
+  azure_devops_org: "https://dev.azure.com/my-org"
+  repo_name: "azure-devops-security-worst-pratices"
