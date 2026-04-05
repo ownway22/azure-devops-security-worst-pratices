@@ -4,15 +4,11 @@ version = "0.1.0"
 description = "GHAzDO Security Scanning Demo — intentionally vulnerable Flask app"
 requires-python = ">=3.11"
 dependencies = [
-    # ── Runtime dependencies (all safe) ─────────────────────────────────────────
-    # Intentionally vulnerable packages are declared in requirements-vuln-demo.txt
-    # so that GHAzDO Dependency Scanning detects them without installing them here.
     "flask",
-    "requests",
-    # Pin transitive deps above their known-vulnerable ranges so the resolver
-    # never lands on a flagged release when pulling in Flask/requests.
-    "urllib3>=2.6.3",      # fixes decompression-bomb CVEs (CVE-2024-37891, CVE-2024-37895)
-    "certifi>=2023.7.22",  # fixes e-Tugra root cert (CVE-2023-37920); requests allows older versions
+    # Pin requests and its transitive deps above all known-vulnerable ranges.
+    "requests>=2.32.2",    # CVE-2023-32681 patched in 2.32.2 (proxy credential leak on redirect)
+    "urllib3>=2.6.3",      # CVE-2024-37891/37895 patched in 2.6.3 (decompression-bomb bypass)
+    "certifi>=2023.7.22",  # CVE-2023-37920  patched in 2023.7.22 (e-Tugra root cert removal)
 ]
 
 [build-system]
