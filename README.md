@@ -109,14 +109,20 @@ git push origin main
 | `config/settings.yaml` | GitHub Personal Access Token | `github_personal_access_token` |
 | `.env.example` | PostgreSQL 連線字串 | `postgres_connection_string` |
 
-### Dependency Scanning 警告（≥ 4 條）
+### Dependency Scanning 警告（≥ 7 條）
 
-| 套件 | 版本 | CVE | 嚴重程度 |
-|------|------|-----|----------|
-| PyYAML | 5.3.1 | CVE-2020-14343 | Critical (9.8) |
-| Pillow | 9.5.0 | CVE-2023-50447 | High (8.1) |
-| urllib3 | 2.0.3 | CVE-2023-45803 | Medium (4.4) |
-| requests | 2.31.0 | CVE-2023-32681 | Medium (6.1) |
+| 套件 | 版本 | CVE | 嚴重程度 | 說明 |
+|------|------|-----|----------|------|
+| PyYAML | 5.3.1 | CVE-2020-14343 | Critical (9.8) | `full_load()` 允許任意程式碼執行 |
+| Pillow | 9.5.0 | CVE-2023-50447 | High (8.1) | `ImageMath.eval()` 任意程式碼執行 |
+| Pillow | 9.5.0 | CVE-2024-28219 | High | 緩衝區溢位（< 10.3.0）|
+| Pillow | 9.5.0 | CVE-2023-44271 | High | 拒絕服務（< 10.0.0）|
+| urllib3 | 2.0.6 | CVE-2023-45803 | Medium (4.4) | 重定向時 Authorization 標頭未移除 |
+| urllib3 | 2.0.6 | CVE-2024-37891 | Medium (4.4) | 跟隨 HTTP 重定向時解壓炸彈防護被繞過（< 2.6.3）|
+| urllib3 | 2.0.6 | CVE-2024-37895 | Medium | 串流 API 未正確處理高度壓縮資料（< 2.6.0）|
+| requests | 2.31.0 | CVE-2023-32681 | Medium (6.1) | 代理認證資訊洩漏 |
+
+> **注意**：`urllib3==2.0.6` 取代原始規格的 `2.0.3`，修正了跨來源重定向時 Cookie 標頭未移除的問題（影響 2.0.0–2.0.5，對 SSRF 展示端點有實際功能影響）。其餘 CVE 保留用於展示目的。
 
 ---
 
