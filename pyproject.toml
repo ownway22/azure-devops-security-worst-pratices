@@ -4,27 +4,15 @@ version = "0.1.0"
 description = "GHAzDO Security Scanning Demo — intentionally vulnerable Flask app"
 requires-python = ">=3.11"
 dependencies = [
+    # ── Runtime dependencies (all safe) ─────────────────────────────────────────
+    # Intentionally vulnerable packages are declared in requirements-vuln-demo.txt
+    # so that GHAzDO Dependency Scanning detects them without installing them here.
     "flask",
     "requests",
-    # ── urllib3: pin to patched version to prevent decompression-bomb CVEs ──────
-    # requests==2.31.0 allows urllib3<3; without an explicit floor the resolver
-    # may pick an older vulnerable release.  urllib3>=2.6.3 fixes CVE-2024-37891
-    # (decompression-bomb bypass via redirect) and CVE-2024-37895 (streaming API
-    # highly-compressed data).
-    "urllib3>=2.6.3",
-    # ── Intentionally vulnerable packages for Dependency Scanning demo ──────────
-    # Each package is pinned to a version with at least one published CVE so that
-    # GHAzDO Dependency Scanning (and the GitHub Advisory Database) will raise
-    # alerts.  Only packages whose CVEs do NOT affect this running demo app's
-    # attack surface are kept vulnerable; packages with exploitable runtime risk
-    # (Pillow buffer-overflow, urllib3 decompression-bombs) have been patched.
-    #
-    "PyYAML==5.3.1",         # CVE-2020-14343 (Critical 9.8) — arbitrary code execution via yaml.full_load()
-    "requests==2.31.0",      # CVE-2023-32681 (Medium 6.1)   — proxy Authorization header leaked on redirect
-    "certifi==2022.12.7",    # CVE-2023-37920 (Medium)        — e-Tugra root certificate not yet removed from trust store
-    "setuptools==65.5.0",    # CVE-2022-40897 (Medium 5.5)   — ReDoS via crafted package URL
-                             # CVE-2024-6345  (High 8.8)     — command injection via package URL (< 70.0.0)
-                             # CVE-2025-47273 (High)          — path traversal in PackageIndex.download (< 78.1.1)
+    # Pin transitive deps above their known-vulnerable ranges so the resolver
+    # never lands on a flagged release when pulling in Flask/requests.
+    "urllib3>=2.6.3",      # fixes decompression-bomb CVEs (CVE-2024-37891, CVE-2024-37895)
+    "certifi>=2023.7.22",  # fixes e-Tugra root cert (CVE-2023-37920); requests allows older versions
 ]
 
 [build-system]

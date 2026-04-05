@@ -10,7 +10,18 @@
 |------|----------|------------|
 | **Code Scanning**（程式碼掃描）| 6 種 CodeQL 高信心漏洞 | ≥ 6 條 |
 | **Secret Scanning**（機密掃描）| 3 種格式正確的假機密 | 3 條 |
-| **Dependency Scanning**（相依套件掃描）| 4 個含已知 CVE 的套件 | ≥ 4 條 |
+| **Dependency Scanning**（相依套件掃描）| 4 個含已知 CVE 的套件 | ≥ 5 條 |
+
+### 依賴套件設計原則
+
+本專案將相依套件分為兩個清單，以確保本地執行安全，同時保留完整的 GHAzDO 展示效果：
+
+| 檔案 | 用途 | 套件狀態 |
+|------|------|----------|
+| `pyproject.toml` | 實際執行的 runtime 相依套件 | **全部安全** — 無已知 CVE |
+| `requirements-vuln-demo.txt` | 供 GHAzDO 掃描的宣告式清單 | **刻意含 CVE** — 不安裝至本地環境 |
+
+GHAzDO Dependency Scanning 會掃描 `requirements*.txt` 檔案中的版本宣告，**不需要實際安裝**即可觸發警告。
 
 ---
 
@@ -18,7 +29,8 @@
 
 ```text
 .
-├── pyproject.toml               # 專案定義 + 有漏洞的相依套件
+├── pyproject.toml               # Runtime 相依（全部安全）
+├── requirements-vuln-demo.txt   # Demo 用 CVE 套件宣告（供 GHAzDO 掃描，不安裝）
 ├── azure-pipelines.yml          # GHAzDO CodeQL + Dependency Scanning Pipeline
 ├── .env.example                 # 含 PostgreSQL 連線字串（Secret #3）
 ├── config/
@@ -51,12 +63,15 @@
 # 1. 安裝 uv（若尚未安裝）
 pip install uv
 
-# 2. 安裝所有相依套件（含有漏洞的版本）
+# 2. 安裝 runtime 相依套件（全部安全，不含 CVE 套件）
 uv sync
 
 # 3. 啟動 Flask 應用
 uv run python -m src.app
 ```
+
+> **注意**：`requirements-vuln-demo.txt` **不需要**也**不應該**執行 `pip install`。
+> 它僅供 GHAzDO 掃描使用。
 
 開啟瀏覽器至 http://localhost:5000 即可看到所有漏洞端點的清單。
 
@@ -111,19 +126,19 @@ git push origin main
 
 ### Dependency Scanning 警告（≥ 5 條）
 
+GHAzDO 掃描 `requirements-vuln-demo.txt` 中宣告的套件版本，**不需要實際安裝**。
+
 | 套件 | 版本 | CVE | 嚴重程度 | 說明 |
 |------|------|-----|----------|------|
 | PyYAML | 5.3.1 | CVE-2020-14343 | Critical (9.8) | `full_load()` 允許任意程式碼執行 |
 | requests | 2.31.0 | CVE-2023-32681 | Medium (6.1) | 重定向時代理 Authorization 標頭洩漏 |
 | certifi | 2022.12.7 | CVE-2023-37920 | Medium | 信任鏈中仍保留 e-Tugra 根憑證 |
-| setuptools | 65.5.0 | CVE-2022-40897 | Medium (5.5) | 惡意套件 URL 的正規表示式拒絕服務（ReDoS）|
+| setuptools | 65.5.0 | CVE-2022-40897 | Medium (5.5) | 惡意套件 URL 的 ReDoS |
 | setuptools | 65.5.0 | CVE-2024-6345 | High (8.8) | 透過套件 URL 的命令注入（< 70.0.0）|
 | setuptools | 65.5.0 | CVE-2025-47273 | High | PackageIndex.download 路徑穿越（< 78.1.1）|
 
-> **注意**：`Pillow==9.5.0` 和 `urllib3==2.0.6` 已移除並替換為 `certifi` 和 `setuptools`。
-> Pillow 的緩衝區溢位（CVE-2024-28219）與 urllib3 的解壓炸彈 CVE（CVE-2024-37891、CVE-2024-37895）
-> 均為可在執行期被利用的漏洞，不適合保留在本機執行的展示專案中。
-> 替換套件的 CVE 僅在套件安裝流程中觸發，不影響執行中的 Flask 展示應用。
+> **設計說明**：CVE 套件宣告在 `requirements-vuln-demo.txt` 中，不在 `pyproject.toml`。
+> `uv sync` 只讀取 `pyproject.toml`（全部安全），因此本地執行環境不會安裝任何有漏洞的套件。
 
 ---
 

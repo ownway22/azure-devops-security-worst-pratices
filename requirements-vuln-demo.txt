@@ -1,0 +1,42 @@
+# ============================================================
+# GHAzDO Dependency Scanning Demo — Intentionally Vulnerable
+# ============================================================
+#
+# ⚠️  DO NOT install this file.  It exists solely so that
+#     GHAzDO Advanced Security → Dependency Scanning detects
+#     the CVEs listed below and raises alerts in the Azure
+#     DevOps Advanced Security dashboard.
+#
+#     GHAzDO reads requirements*.txt manifests for vulnerable
+#     version declarations; the packages do NOT need to be
+#     installed for scanning to work.
+#
+#     Runtime deps are in pyproject.toml (all patched).
+#
+# To install the demo app normally:
+#   uv sync                        ← safe, reads pyproject.toml only
+#
+# ============================================================
+
+# CVE-2020-14343 (Critical 9.8)
+#   yaml.full_load() allows arbitrary code execution via the
+#   python/object/new YAML constructor.  Patched: >= 5.4
+PyYAML==5.3.1
+
+# CVE-2023-32681 (Medium 6.1)
+#   proxy Authorization header is forwarded on cross-scheme
+#   redirects, leaking credentials to third-party servers.
+#   Patched: >= 2.32.2
+requests==2.31.0
+
+# CVE-2023-37920 (Medium)
+#   e-Tugra root CA not removed from the bundled trust store,
+#   undermining TLS certificate validation for affected hosts.
+#   Patched: >= 2023.7.22
+certifi==2022.12.7
+
+# CVE-2022-40897 (Medium 5.5) — ReDoS via crafted package URL
+# CVE-2024-6345  (High 8.8)  — command injection via package URL (< 70.0.0)
+# CVE-2025-47273 (High)      — path traversal in PackageIndex.download (< 78.1.1)
+#   All three patched by upgrading to >= 78.1.1
+setuptools==65.5.0
