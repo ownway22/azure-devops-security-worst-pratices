@@ -1,0 +1,16 @@
+# Code coverage configuration for Azure Pipelines pull request diff coverage.
+# Ref: https://learn.microsoft.com/azure/devops/pipelines/test/review-code-coverage-results
+#
+# This file is separate from azure-pipelines.yml because coverage settings apply
+# to the repository level and work regardless of which pipeline builds the code.
+# It is read automatically by Azure DevOps — no pipeline task required.
+
+coverage:
+  status:
+    # Post per-file diff coverage as a comment on each pull request.
+    comments: on
+    diff:
+      # Require at least 60% of changed lines to be covered.
+      # Default is 70%; lowered here to accommodate the demo app's intentional
+      # lack of tests for vulnerable endpoints.
+      target: 60%

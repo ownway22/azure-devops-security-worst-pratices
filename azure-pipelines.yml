@@ -24,3 +24,36 @@ steps:
   # Note: Secret Scanning does NOT require a pipeline task.
   # It is enabled at the repository level via Advanced Security > Secret Protection
   # and automatically scans all commits pushed to the repository.
+
+  # ── Code Coverage ──────────────────────────────────────────────────────────
+
+  # Step 4: Install runtime + dev dependencies (includes pytest & pytest-cov)
+  - script: |
+      pip install uv
+      uv sync --extra dev
+    displayName: "Install dependencies (uv)"
+
+  # Step 5: Run pytest with Cobertura XML coverage output
+  # pytest.ini_options in pyproject.toml configures --cov=src and --cov-report=xml
+  - script: |
+      uv run pytest --junitxml=test-results.xml
+    displayName: "Run tests with coverage (pytest-cov → coverage.xml)"
+    continueOnError: true   # allow publish even if tests fail
+
+  # Step 6: Publish test results to the Tests tab
+  - task: PublishTestResults@2
+    displayName: "Publish test results"
+    inputs:
+      testResultsFormat: "JUnit"
+      testResultsFiles: "test-results.xml"
+      failTaskOnFailedTests: false
+    condition: always()
+
+  # Step 7: Publish code coverage results to the Code Coverage tab
+  # Uses PublishCodeCoverageResults v2 (supports Cobertura + HTML report generation)
+  # Ref: https://learn.microsoft.com/azure/devops/pipelines/test/review-code-coverage-results
+  - task: PublishCodeCoverageResults@2
+    displayName: "Publish code coverage (Cobertura → HTML)"
+    inputs:
+      summaryFileLocation: "coverage.xml"   # Cobertura XML produced by pytest-cov
+    condition: always()
