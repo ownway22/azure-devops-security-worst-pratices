@@ -5,70 +5,69 @@ pool:
   name: Default
 
 steps:
-  # ── Advanced Security: Code Scanning ───────────────────────────────────────
-  # Ref: https://learn.microsoft.com/azure/devops/repos/security/configure-github-advanced-security-features
+  # ── 進階安全性：程式碼掃描 ─────────────────────────────────────────────────
+  # 參考：https://learn.microsoft.com/azure/devops/repos/security/configure-github-advanced-security-features
 
-  # Step 1: Initialize CodeQL — must run BEFORE the build/test steps
+  # 步驟 1：初始化 CodeQL — 必須在建置／測試步驟之前執行
   - task: AdvancedSecurity-Codeql-Init@1
-    displayName: "[Code Scanning] Initialize CodeQL"
+    displayName: "[程式碼掃描] 初始化 CodeQL"
     inputs:
       languages: "python"
       enableAutomaticCodeQLInstall: true
 
-  # ── Advanced Security: Dependency Scanning ─────────────────────────────────
+  # ── 進階安全性：相依套件掃描 ───────────────────────────────────────────────
 
-  # Step 2: Scan pyproject.toml against the GitHub Advisory Database (CVE/GHSA)
-  # Requires 'Code Security' to be enabled in the repository settings.
+  # 步驟 2：比對 pyproject.toml 與 GitHub Advisory Database（CVE／GHSA）
+  # 需在儲存庫設定中啟用「Code Security」功能。
   - task: AdvancedSecurity-Dependency-Scanning@1
-    displayName: "[Dependency Scanning] Scan pyproject.toml for CVEs"
+    displayName: "[相依套件掃描] 掃描 pyproject.toml 中的已知漏洞（CVE）"
 
-  # ── Advanced Security: Secret Scanning ────────────────────────────────────
-  # Secret Scanning does NOT use a pipeline task.
-  # It is triggered automatically on every git push when 'Secret Protection'
-  # is enabled in the repository settings (Project Settings → Repos →
-  # Advanced Security → Secret Protection).
-  # Results appear in: Repos → Advanced Security → Secrets
+  # ── 進階安全性：機密掃描 ───────────────────────────────────────────────────
+  # 機密掃描不需要 Pipeline Task。
+  # 當儲存庫設定中啟用「Secret Protection」後，每次 git push 時會自動觸發掃描。
+  # 路徑：專案設定 → Repos → Advanced Security → Secret Protection
+  # 掃描結果位置：Repos → Advanced Security → Secrets
   - script: |
-      echo "##[section]Secret Scanning"
-      echo "Secret Scanning is push-triggered and requires no pipeline task."
-      echo "Results: Azure DevOps → Repos → Advanced Security → Secrets"
-    displayName: "[Secret Scanning] Push-triggered (no task required)"
+      echo "##[section]機密掃描"
+      echo "機密掃描由 git push 自動觸發，不需要 Pipeline Task。"
+      echo "掃描結果：Azure DevOps → Repos → Advanced Security → Secrets"
+    displayName: "[機密掃描] Push 時自動觸發（無需 Task）"
 
-  # ── Advanced Security: Code Scanning (analyze) ─────────────────────────────
+  # ── 進階安全性：程式碼掃描（分析）────────────────────────────────────────
 
-  # Step 3: Run CodeQL analysis and upload results to Advanced Security tab
+  # 步驟 3：執行 CodeQL 分析並將結果上傳至 Advanced Security 頁面
   - task: AdvancedSecurity-Codeql-Analyze@1
-    displayName: "[Code Scanning] Analyze and upload CodeQL results"
+    displayName: "[程式碼掃描] 執行分析並上傳 CodeQL 結果"
 
-  # ── Code Coverage ──────────────────────────────────────────────────────────
+  # ── 程式碼覆蓋率 ───────────────────────────────────────────────────────────
 
-  # Step 4: Install runtime + dev dependencies (includes pytest & pytest-cov)
+  # 步驟 4：安裝執行環境與開發相依套件（含 pytest 與 pytest-cov）
   - script: |
       pip install uv
       uv sync --extra dev
-    displayName: "Install dependencies (uv)"
+    displayName: "安裝相依套件（uv）"
 
-  # Step 5: Run pytest with Cobertura XML coverage output
-  # pytest.ini_options in pyproject.toml configures --cov=src and --cov-report=xml
+  # 步驟 5：執行 pytest 並輸出 Cobertura XML 格式的覆蓋率報告
+  # pyproject.toml 的 pytest.ini_options 已設定 --cov=src 與 --cov-report=xml
   - script: |
       uv run pytest --junitxml=test-results.xml
-    displayName: "Run tests with coverage (pytest-cov → coverage.xml)"
-    continueOnError: true   # allow publish even if tests fail
+    displayName: "執行測試並收集覆蓋率（pytest-cov → coverage.xml）"
+    continueOnError: true   # 即使測試失敗，仍繼續執行後續發佈步驟
 
-  # Step 6: Publish test results to the Tests tab
+  # 步驟 6：將測試結果發佈至 Tests 頁籤
   - task: PublishTestResults@2
-    displayName: "Publish test results"
+    displayName: "發佈測試結果"
     inputs:
       testResultsFormat: "JUnit"
       testResultsFiles: "test-results.xml"
       failTaskOnFailedTests: false
     condition: always()
 
-  # Step 7: Publish code coverage results to the Code Coverage tab
-  # Uses PublishCodeCoverageResults v2 (supports Cobertura + HTML report generation)
-  # Ref: https://learn.microsoft.com/azure/devops/pipelines/test/review-code-coverage-results
+  # 步驟 7：將程式碼覆蓋率結果發佈至 Code Coverage 頁籤
+  # 使用 PublishCodeCoverageResults v2（支援 Cobertura 格式，並自動產生 HTML 報表）
+  # 參考：https://learn.microsoft.com/azure/devops/pipelines/test/review-code-coverage-results
   - task: PublishCodeCoverageResults@2
-    displayName: "Publish code coverage (Cobertura → HTML)"
+    displayName: "發佈程式碼覆蓋率報告（Cobertura → HTML）"
     inputs:
-      summaryFileLocation: "coverage.xml"   # Cobertura XML produced by pytest-cov
+      summaryFileLocation: "coverage.xml"   # 由 pytest-cov 產生的 Cobertura XML
     condition: always()
