@@ -5,25 +5,40 @@ pool:
   name: Default
 
 steps:
-  # Step 1: Initialize CodeQL for Python code scanning
-  # This step configures CodeQL to analyze the Python source code for vulnerabilities.
+  # ── Advanced Security: Code Scanning ───────────────────────────────────────
+  # Ref: https://learn.microsoft.com/azure/devops/repos/security/configure-github-advanced-security-features
+
+  # Step 1: Initialize CodeQL — must run BEFORE the build/test steps
   - task: AdvancedSecurity-Codeql-Init@1
+    displayName: "[Code Scanning] Initialize CodeQL"
     inputs:
       languages: "python"
       enableAutomaticCodeQLInstall: true
 
-  # Step 2: Scan for vulnerable dependencies (SCA)
-  # Checks pyproject.toml dependencies against the GitHub Advisory Database.
+  # ── Advanced Security: Dependency Scanning ─────────────────────────────────
+
+  # Step 2: Scan pyproject.toml against the GitHub Advisory Database (CVE/GHSA)
   # Requires 'Code Security' to be enabled in the repository settings.
   - task: AdvancedSecurity-Dependency-Scanning@1
+    displayName: "[Dependency Scanning] Scan pyproject.toml for CVEs"
 
-  # Step 3: Run CodeQL analysis and upload results
-  # Analyzes the code for the vulnerabilities initialized in Step 1.
+  # ── Advanced Security: Secret Scanning ────────────────────────────────────
+  # Secret Scanning does NOT use a pipeline task.
+  # It is triggered automatically on every git push when 'Secret Protection'
+  # is enabled in the repository settings (Project Settings → Repos →
+  # Advanced Security → Secret Protection).
+  # Results appear in: Repos → Advanced Security → Secrets
+  - script: |
+      echo "##[section]Secret Scanning"
+      echo "Secret Scanning is push-triggered and requires no pipeline task."
+      echo "Results: Azure DevOps → Repos → Advanced Security → Secrets"
+    displayName: "[Secret Scanning] Push-triggered (no task required)"
+
+  # ── Advanced Security: Code Scanning (analyze) ─────────────────────────────
+
+  # Step 3: Run CodeQL analysis and upload results to Advanced Security tab
   - task: AdvancedSecurity-Codeql-Analyze@1
-
-  # Note: Secret Scanning does NOT require a pipeline task.
-  # It is enabled at the repository level via Advanced Security > Secret Protection
-  # and automatically scans all commits pushed to the repository.
+    displayName: "[Code Scanning] Analyze and upload CodeQL results"
 
   # ── Code Coverage ──────────────────────────────────────────────────────────
 
