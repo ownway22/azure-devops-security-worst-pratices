@@ -1,46 +1,46 @@
 # ⚠️ 警告：此檔案含有刻意嵌入的假機密，用於展示 GHAzDO Secret Scanning 功能。
-# 以下 AWS 金鑰均為虛假值，不具任何實際效力，僅用於觸發 Secret Scanning 偵測。
+# 以下 Azure Storage 金鑰為虛假值，不具任何實際效力，僅用於觸發 Secret Scanning 偵測。
 """
-S3 backup integration for uploaded files.
-Simulates backing up files from the Path Traversal demo endpoint to AWS S3.
+Azure Blob Storage backup module.
+Backs up files uploaded via the Path Traversal demo endpoint to Azure Blob Storage.
 
-DEMO WORST PRACTICE: AWS credentials are hard-coded directly in source code.
+DEMO WORST PRACTICE: Azure Storage account key is hard-coded directly in source code
+instead of using Managed Identity or environment variables.
 """
 
 import urllib.request
 
-# Secret #4 — AWS Access Key ID + Secret Access Key
-# Format: AKIA[A-Z0-9]{16} matching 'aws_access_key_id'
-AWS_ACCESS_KEY_ID = "AKIADEMOGHAZDO000001"  # noqa: S105
-AWS_SECRET_ACCESS_KEY = "wJa8Q/dEmO+KEYghAzDoFaKeAbCdEfGhIjKlMnOp"  # noqa: S105
+# Secret #4 — Azure Storage Account Key
+# Format: 88-character base64 string matching 'azure_storage_account_key'
+# DEMO WORST PRACTICE: storage account key committed to source control; anyone with
+# repo read access can exfiltrate all blobs in the storage account.
+AZURE_STORAGE_ACCOUNT_NAME = "ghazdobackupdemo"
+AZURE_STORAGE_ACCOUNT_KEY = "dGVzdFN0b3JhZ2VBY2NvdW50S2V5Rm9yR0hBekRPRGVtb1RoaXNJc0Zha2VBbmROb3RSZWFsS2V5QT09"  # noqa: S105
 
-# S3 bucket for storing uploaded demo files
-S3_BUCKET = "ghazdo-vuln-demo-uploads"
-S3_REGION = "ap-northeast-1"
+BLOB_CONTAINER = "vuln-demo-uploads"
+BLOB_ENDPOINT = f"https://{AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net"
 
 
-def upload_file_to_s3(local_path: str, s3_key: str) -> dict:
+def upload_file_to_blob(local_path: str, blob_name: str) -> dict:
     """
-    Upload a local file to S3.
+    Upload a local file to Azure Blob Storage.
 
-    DEMO WORST PRACTICE: Uses hard-coded credentials instead of IAM roles
-    or environment variables. Never do this in production.
+    DEMO WORST PRACTICE: Uses hard-coded storage account key instead of
+    Managed Identity or Azure Key Vault. Never do this in production.
     """
-    # Construct a minimal S3 PUT request using only stdlib (no boto3)
-    # so the dependency footprint stays small for the demo.
-    url = f"https://{S3_BUCKET}.s3.{S3_REGION}.amazonaws.com/{s3_key}"
+    url = f"{BLOB_ENDPOINT}/{BLOB_CONTAINER}/{blob_name}"
 
     with open(local_path, "rb") as f:  # noqa: PTH123 — intentional path risk for demo
         data = f.read()
 
     req = urllib.request.Request(url, data=data, method="PUT")  # noqa: S310
-    req.add_header("x-amz-content-sha256", "UNSIGNED-PAYLOAD")
+    req.add_header("x-ms-blob-type", "BlockBlob")
+    req.add_header("Authorization", f"SharedKey {AZURE_STORAGE_ACCOUNT_NAME}:{AZURE_STORAGE_ACCOUNT_KEY}")
 
-    # NOTE: This is intentionally simplified — real S3 uploads require SigV4 signing.
-    # The credentials above exist solely to demonstrate that Secret Scanning
-    # detects AWS keys committed to source control.
+    # NOTE: This does NOT execute in demo mode — the function exists solely
+    # to demonstrate that Secret Scanning detects credentials in source code.
     return {
-        "bucket": S3_BUCKET,
-        "key": s3_key,
+        "container": BLOB_CONTAINER,
+        "blob": blob_name,
         "status": "demo_only_not_executed",
     }

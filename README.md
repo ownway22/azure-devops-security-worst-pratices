@@ -107,11 +107,11 @@ git push origin main
 
 | # | 檔案 | 機密類型 | 偵測模式 |
 |---|------|----------|----------|
-| 1 | `src/config.py` | Azure SP Client Secret | `azure_active_directory_application_secret` |
-| 2 | `config/settings.yaml` | GitHub Personal Access Token | `github_personal_access_token` |
-| 3 | `.env.example` | PostgreSQL 連線字串 | `postgres_connection_string` |
-| 4 | `src/integrations/s3_backup.py` | AWS Access Key ID + Secret | `aws_access_key_id` |
-| 5 | `config/settings.yaml` | Slack Incoming Webhook URL | `slack_incoming_webhook_url` |
+| 1 | `src/config.py` | Azure DevOps Personal Access Token | `azure_devops_personal_access_token` |
+| 2 | `config/settings.yaml` | npm Publish Token | `npm_access_token` |
+| 3 | `.env.example` | Stripe Secret Key（Test Mode）| `stripe_api_key` |
+| 4 | `src/integrations/s3_backup.py` | Azure Storage Account Key | `azure_storage_account_key` |
+| 5 | `config/settings.yaml` | Slack Incoming Webhook URL ✓ | `slack_incoming_webhook_url` |
 
 ### Dependency Scanning（≥ 3 條警告）
 

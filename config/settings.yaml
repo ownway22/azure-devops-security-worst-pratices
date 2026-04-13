@@ -7,10 +7,10 @@ app:
   log_level: info
   environment: production
 
-# Secret #2 — GitHub Personal Access Token (classic)
-# Format: ghp_ prefix + 36 lowercase alphanumeric characters matching 'github_personal_access_token'
-# Note: uses lowercase-only suffix to better match GitHub's actual token pattern.
-github_token: "ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789ab"
+# Secret #2 — npm Publish Token
+# Format: npm_ prefix + 36 alphanumeric characters matching 'npm_access_token'
+# DEMO WORST PRACTICE: npm publish token committed to config file for CI/CD pipeline.
+npm_token: "npm_K9mP2xR8vN5qT7wL3yH6jF4cA1bD0eG2sU8iO5nR3"
 
 integrations:
   azure_devops_org: "https://dev.azure.com/my-org"
