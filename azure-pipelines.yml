@@ -65,7 +65,15 @@ steps:
       failTaskOnFailedTests: false
     condition: always()
 
-  # 步驟 7：將程式碼覆蓋率結果發佈至 Code Coverage 頁籤
+  # 步驟 7a：安裝 .NET SDK（PublishCodeCoverageResults@2 需要它來執行 ReportGenerator）
+  - task: UseDotNet@2
+    displayName: "安裝 .NET SDK（供覆蓋率報告轉換使用）"
+    inputs:
+      packageType: sdk
+      version: "8.x"
+    condition: always()
+
+  # 步驟 7b：將程式碼覆蓋率結果發佈至 Code Coverage 頁籤
   # 使用 PublishCodeCoverageResults v2（支援 Cobertura 格式，並自動產生 HTML 報表）
   # 參考：https://learn.microsoft.com/azure/devops/pipelines/test/review-code-coverage-results
   - task: PublishCodeCoverageResults@2
