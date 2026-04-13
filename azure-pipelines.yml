@@ -44,12 +44,14 @@ steps:
   # 步驟 4：安裝執行環境與開發相依套件（含 pytest 與 pytest-cov）
   - script: |
       pip install uv
+      export PATH="$HOME/.local/bin:$PATH"
       uv sync --extra dev
     displayName: "安裝相依套件（uv）"
 
   # 步驟 5：執行 pytest 並輸出 Cobertura XML 格式的覆蓋率報告
   # pyproject.toml 的 pytest.ini_options 已設定 --cov=src 與 --cov-report=xml
   - script: |
+      export PATH="$HOME/.local/bin:$PATH"
       uv run pytest --junitxml=test-results.xml
     displayName: "執行測試並收集覆蓋率（pytest-cov → coverage.xml）"
     continueOnError: true   # 即使測試失敗，仍繼續執行後續發佈步驟
