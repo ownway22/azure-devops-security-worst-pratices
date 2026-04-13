@@ -14,3 +14,11 @@ github_token: "ghp_A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8"
 integrations:
   azure_devops_org: "https://dev.azure.com/my-org"
   repo_name: "azure-devops-security-worst-pratices"
+
+# Secret #5 — Slack Incoming Webhook URL
+# Format: https://hooks.slack.com/services/T.../B.../... matching 'slack_incoming_webhook_url'
+# DEMO WORST PRACTICE: webhook URL hard-coded in config file committed to version control.
+alerting:
+  slack_webhook_url: "https://hooks.slack.com/services/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jk"
+  channel: "#security-alerts"
+  notify_on: ["critical", "high"]

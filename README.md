@@ -9,8 +9,8 @@
 | 功能 | 偵測目標 | 預期警告數 |
 |------|----------|------------|
 | **Code Scanning**（程式碼掃描）| 6 種 CodeQL 高信心漏洞 | ≥ 6 條 |
-| **Secret Scanning**（機密掃描）| 3 種格式正確的假機密 | 3 條 |
-| **Dependency Scanning**（相依套件掃描）| Pipeline 設定範例（所有套件已修補）| 0 條（展示乾淨狀態）|
+| **Secret Scanning**（機密掃描）| 5 種格式正確的假機密 | 5 條 |
+| **Dependency Scanning**（相依套件掃描）| 3 個含 CVE 的有漏洞套件版本 | ≥ 3 條 |
 
 ---
 
@@ -18,15 +18,17 @@
 
 ```text
 .
-├── pyproject.toml               # 專案相依套件（全部為最新安全版本）
+├── pyproject.toml               # 相依套件（含 3 個有漏洞版本：Dep #1–#3）
 ├── azure-pipelines.yml          # GHAzDO CodeQL + Dependency Scanning Pipeline
 ├── .env.example                 # 含 PostgreSQL 連線字串（Secret #3）
 ├── config/
-│   └── settings.yaml            # 含 GitHub PAT（Secret #2）
+│   └── settings.yaml            # 含 GitHub PAT（Secret #2）+ Slack Webhook（Secret #5）
 └── src/
     ├── app.py                   # Flask 應用入口 + 路由註冊
-    ├── config.py                # 應用設定 + Azure SP Secret（Secret #1）
+    ├── config.py                # 應用設定 + Azure SP Secret（Secret #1）+ PyYAML 不安全載入
     ├── database.py              # SQLite 初始化（供 SQL Injection 展示用）
+    ├── integrations/
+    │   └── s3_backup.py         # S3 備份模組 + 硬編碼 AWS 金鑰（Secret #4）
     └── vulnerabilities/
         ├── sql_injection.py     # CWE-89 — SQL Injection (py/sql-injection)
         ├── command_injection.py # CWE-78 — Command Injection (py/command-line-injection)
@@ -101,21 +103,25 @@ git push origin main
 | `GET /api/search?q=` | Reflected XSS | CWE-79 | `py/reflective-xss` |
 | `POST /api/import` | Insecure Deserialization | CWE-502 | `py/unsafe-deserialization` |
 
-### Secret Scanning 警告（3 條）
+### Secret Scanning 警告（5 條）
 
-| 檔案 | 機密類型 | 偵測模式 |
-|------|----------|----------|
-| `src/config.py` | Azure SP Client Secret | `azure_active_directory_application_secret` |
-| `config/settings.yaml` | GitHub Personal Access Token | `github_personal_access_token` |
-| `.env.example` | PostgreSQL 連線字串 | `postgres_connection_string` |
+| # | 檔案 | 機密類型 | 偵測模式 |
+|---|------|----------|----------|
+| 1 | `src/config.py` | Azure SP Client Secret | `azure_active_directory_application_secret` |
+| 2 | `config/settings.yaml` | GitHub Personal Access Token | `github_personal_access_token` |
+| 3 | `.env.example` | PostgreSQL 連線字串 | `postgres_connection_string` |
+| 4 | `src/integrations/s3_backup.py` | AWS Access Key ID + Secret | `aws_access_key_id` |
+| 5 | `config/settings.yaml` | Slack Incoming Webhook URL | `slack_incoming_webhook_url` |
 
-### Dependency Scanning（Pipeline 設定展示）
+### Dependency Scanning（≥ 3 條警告）
 
-本專案的所有套件均已修補至最新安全版本。Dependency Scanning 展示重點在於：
+`pyproject.toml` 中刻意鎖定以下含已知 CVE 的有漏洞版本以觸發掃描警告：
 
-1. **Pipeline 設定**：`azure-pipelines.yml` 中的 `AdvancedSecurity-Dependency-Scanning@1` 任務展示如何在 CI/CD 中啟用相依套件掃描
-2. **乾淨狀態展示**：掃描結果顯示 0 個警告，說明定期更新相依套件的最佳實務
-3. **管理層價值**：展示「修補後的狀態」— 說明 GHAzDO 能協助團隊持續維持乾淨的相依套件狀態
+| # | 套件 | 鎖定版本 | CVE | 漏洞描述 |
+|---|------|----------|-----|----------|
+| Dep #1 | `requests` | `2.28.0` | CVE-2023-32681 | HTTP Proxy 認證標頭轉發至非代理主機（中風險） |
+| Dep #2 | `urllib3` | `1.26.14` | CVE-2023-43804 / CVE-2023-45803 | Cookie/Authorization 標頭在重導向時洩漏（中風險） |
+| Dep #3 | `pyyaml` | `5.3.1` | CVE-2020-14343 | `yaml.load()` 不指定 Loader 可執行任意程式碼（嚴重 CVSS 9.8） |
 
 ---
 
@@ -157,8 +163,8 @@ git push
 
 ## 業務價值摘要（管理層視角）
 
-| GHAzDO 功能 | 風險 | 業務價值 |
-|-------------|------|----------|
-| **Code Scanning** | 程式碼中的安全漏洞可被攻擊者利用，導致資料外洩或系統入侵 | 在程式碼合併前自動發現漏洞，降低修復成本（越早發現越便宜） |
-| **Secret Scanning** | 誤提交的 API 金鑰、密碼可導致未授權存取 | 推送時立即偵測機密洩漏，防止憑證被惡意利用 |
-| **Dependency Scanning** | 使用含已知 CVE 的第三方套件，攻擊者可利用公開漏洞 | 自動盤點相依套件並提供升級建議；乾淨結果代表團隊持續維護安全狀態 |
+| GHAzDO 功能 | 展示漏洞數 | 風險 | 業務價值 |
+|-------------|-----------|------|----------|
+| **Code Scanning** | 6 條警告 | 程式碼中的安全漏洞可被攻擊者利用，導致資料外洩或系統入侵 | 在程式碼合併前自動發現漏洞，降低修復成本（越早發現越便宜） |
+| **Secret Scanning** | 5 條警告 | 誤提交的 API 金鑰、密碼可導致未授權存取或服務濫用 | 推送時立即偵測機密洩漏，防止 AWS、Slack、資料庫憑證被惡意利用 |
+| **Dependency Scanning** | ≥ 3 條警告 | 使用含已知 CVE 的第三方套件，攻擊者可利用公開漏洞 | 自動盤點相依套件並提供升級建議；本例展示從「有漏洞版本」偵測到「提示修補」的完整流程 |

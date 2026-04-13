@@ -3,7 +3,14 @@
 """
 Application configuration module — contains intentionally fake secrets for
 GHAzDO Secret Scanning demo purposes (Secret #1: Azure Service Principal Client Secret).
+
+Also demonstrates insecure use of PyYAML (Dep #3 / CVE-2020-14343):
+yaml.load() is called without a Loader argument, enabling arbitrary object construction.
 """
+
+import pathlib
+
+import yaml  # pyyaml==5.3.1 — see pyproject.toml for CVE details
 
 # Azure Service Principal settings
 AZURE_TENANT_ID = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
@@ -16,3 +23,10 @@ AZURE_CLIENT_SECRET = "wJa8Q~bFkL2mNpRtXvZcDhYeGsUiOjKqWnMaB3Cd"  # noqa: S105
 # Flask settings
 FLASK_SECRET_KEY = "dev-only-not-for-production"  # noqa: S105
 DEBUG = False
+
+# ⚠️ DEMO WORST PRACTICE: yaml.load() without Loader is unsafe (CVE-2020-14343).
+# It allows arbitrary Python object construction from the YAML file,
+# equivalent to pickle deserialization. Always use yaml.safe_load() in production.
+_settings_path = pathlib.Path(__file__).parent.parent / "config" / "settings.yaml"
+with open(_settings_path) as _f:  # noqa: PTH123
+    APP_SETTINGS = yaml.load(_f)  # noqa: S506 — intentionally insecure for demo
