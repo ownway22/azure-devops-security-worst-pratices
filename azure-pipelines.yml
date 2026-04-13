@@ -15,13 +15,6 @@ steps:
       languages: "python"
       enableAutomaticCodeQLInstall: true
 
-  # ── 進階安全性：相依套件掃描 ───────────────────────────────────────────────
-
-  # 步驟 2：比對 pyproject.toml 與 GitHub Advisory Database（CVE／GHSA）
-  # 需在儲存庫設定中啟用「Code Security」功能。
-  - task: AdvancedSecurity-Dependency-Scanning@1
-    displayName: "[相依套件掃描] 掃描 pyproject.toml 中的已知漏洞（CVE）"
-
   # ── 進階安全性：機密掃描 ───────────────────────────────────────────────────
   # 機密掃描不需要 Pipeline Task。
   # 當儲存庫設定中啟用「Secret Protection」後，每次 git push 時會自動觸發掃描。
@@ -47,6 +40,13 @@ steps:
       export PATH="$HOME/.local/bin:$PATH"
       uv sync --extra dev
     displayName: "安裝相依套件（uv）"
+
+  # ── 進階安全性：相依套件掃描 ───────────────────────────────────────────────
+  # 步驟 5：比對 requirements.txt 與 GitHub Advisory Database（CVE／GHSA）
+  # 放在 uv sync 之後執行，確保套件環境已就緒；
+  # requirements.txt 是 Component Detection 最可靠的 Python 格式。
+  - task: AdvancedSecurity-Dependency-Scanning@1
+    displayName: "[相依套件掃描] 掃描 requirements.txt 中的已知漏洞（CVE）"
 
   # 步驟 5：執行 pytest 並輸出 Cobertura XML 格式的覆蓋率報告
   # pyproject.toml 的 pytest.ini_options 已設定 --cov=src 與 --cov-report=xml

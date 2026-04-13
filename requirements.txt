@@ -1,0 +1,17 @@
+# ⚠️ DEMO WORST PRACTICE — 刻意釘選已知漏洞版本以觸發 GHAzDO Dependency Scanning 告警
+# 請勿在正式環境使用這些版本！
+
+# Dep #1 — CVE-2023-32681 (CVSS 6.1)
+# HTTP proxy 驗證標頭被轉送到非 proxy 主機
+requests==2.28.0
+
+# Dep #2 — CVE-2023-43804 (CVSS 8.1) + CVE-2023-45803 (CVSS 4.2)
+# Cookie 標頭洩漏 + 重新導向時 request body 資訊洩漏
+urllib3==1.26.14
+
+# Dep #3 — CVE-2020-14343 (CVSS 9.8)
+# yaml.load() 無 Loader 參數時允許任意程式碼執行
+PyYAML==5.3.1
+
+# Runtime 相依套件
+Flask
