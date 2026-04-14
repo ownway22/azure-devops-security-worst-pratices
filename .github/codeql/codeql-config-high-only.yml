@@ -1,0 +1,51 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# CodeQL 精細掃描設定：僅回報高／嚴重等級（High / Critical）漏洞
+# ───────────────────────────────────────────────────────────────────────────────
+# 目的：展示開發者可透過 config 檔案「精細控制」掃描範圍，
+#       僅針對 High/Critical 的未知漏洞發出告警，過濾掉 Medium/Low。
+#
+# ⚠️  DEMO WORST PRACTICE 說明：
+#       在正式專案中縮減掃描範圍等同於降低安全防護，應由組織層級的
+#       Branch Policy 強制啟用完整掃描，而非信任開發者自行調整。
+#
+# CodeQL severity 對照：
+#   error          → High / Critical（保留）
+#   warning        → Medium（排除）
+#   recommendation → Low / Informational（排除）
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: "僅掃描 High / Critical — 排除 Medium / Low"
+
+# ── 查詢套件 ──────────────────────────────────────────────────────────────────
+# security-extended：包含 security-and-quality 的全部安全規則，
+# 是 GHAzDO 預設套件，提供最廣泛的安全覆蓋。
+queries:
+  - uses: security-extended
+
+# ── 嚴重性過濾 ────────────────────────────────────────────────────────────────
+# 排除 warning（Medium）與 recommendation（Low）等級的查詢，
+# 確保 pipeline 只對 error 等級（High/Critical）告警。
+#
+# 本 repo 已知漏洞的 CodeQL 嚴重性分類（保留 / 排除）：
+#   sql-injection          → error   ✅ 保留（CWE-89,  CVSS ~9.8）
+#   command-injection      → error   ✅ 保留（CWE-78,  CVSS ~9.8）
+#   path-traversal-from-remote-source → error ✅ 保留（CWE-22）
+#   reflected-xss          → error   ✅ 保留（CWE-79）
+#   full-ssrf              → error   ✅ 保留（CWE-918）
+#   deserialization-of-user-controlled-data → error ✅ 保留（CWE-502）
+#   incomplete-url-scheme-check → warning ❌ 排除（Medium，partial SSRF）
+#   incomplete-hostname-regexp  → warning ❌ 排除（Medium）
+#   code-injection              → warning ❌ 排除（Medium，eval() 等）
+query-filters:
+  - exclude:
+      problem.severity: warning        # 排除 Medium
+  - exclude:
+      problem.severity: recommendation # 排除 Low / Informational
+
+# ── 路徑排除 ──────────────────────────────────────────────────────────────────
+# 不掃描測試程式碼與設定範本；
+# 刻意保留 src/ 下的全部漏洞模組（這才是本 demo 的掃描目標）。
+paths-ignore:
+  - "tests/"
+  - ".github/"
+  - "config/"

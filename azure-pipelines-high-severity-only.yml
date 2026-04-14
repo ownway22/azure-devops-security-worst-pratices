@@ -1,0 +1,104 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# azure-pipelines-high-severity-only.yml
+# ───────────────────────────────────────────────────────────────────────────────
+# 目的：展示透過 CodeQL config 檔案，將掃描範圍精細控制為
+#       「僅告警 High / Critical 漏洞，靜默 Medium / Low」。
+#
+# 對照組：azure-pipelines.yml（預設完整掃描，無任何過濾）
+#
+# ⚠️  DEMO WORST PRACTICE：
+#       開發者可透過此方式規避中低嚴重性漏洞告警。
+#       正式環境應由組織層級的 Branch Policy 強制使用預設完整掃描設定。
+# ═══════════════════════════════════════════════════════════════════════════════
+
+trigger: none   # 不自動觸發；需手動執行，作為對照 demo 用途
+
+pool:
+  name: Default
+
+steps:
+  # ── 進階安全性：程式碼掃描（精細控制版）────────────────────────────────────
+
+  # 步驟 1：初始化 CodeQL，指定自訂 config 排除 Medium/Low 查詢
+  # 關鍵差異：configFilePath 指向 .github/codeql/codeql-config-high-only.yml
+  #   → query-filters 排除 problem.severity: warning / recommendation
+  #   → 等同於只掃描 error 等級（High / Critical）的安全規則
+  - task: AdvancedSecurity-Codeql-Init@1
+    displayName: "[程式碼掃描] 初始化 CodeQL（僅 High/Critical 規則）"
+    inputs:
+      languages: "python"
+      enableAutomaticCodeQLInstall: true
+      # ⬇️ 這一行是與完整掃描版本的唯一差異
+      configFilePath: ".github/codeql/codeql-config-high-only.yml"
+
+  # 步驟 2：安裝相依套件（CodeQL 需要程式碼可被正確解析）
+  - script: |
+      pip install uv
+      export PATH="$HOME/.local/bin:$PATH"
+      uv sync --extra dev
+    displayName: "安裝相依套件（uv）"
+
+  # ── 進階安全性：相依套件掃描（同完整版，不受 CodeQL config 影響）────────────
+
+  # 步驟 3：相依套件掃描不支援查詢過濾，掃描行為與完整版本相同
+  - task: AdvancedSecurity-Dependency-Scanning@1
+    displayName: "[相依套件掃描] 掃描 requirements.txt（行為同完整版）"
+
+  # 步驟 4：執行 CodeQL 分析並上傳結果
+  # 只有符合 codeql-config-high-only.yml 過濾條件的結果才會出現在告警頁面
+  - task: AdvancedSecurity-Codeql-Analyze@1
+    displayName: "[程式碼掃描] 執行分析並上傳（High/Critical 告警）"
+
+  # ── 對照差異說明 ───────────────────────────────────────────────────────────
+  # 執行此 pipeline 後，請至 Repos → Advanced Security → Code Scanning 確認：
+  #
+  # ✅ 預期仍出現（error 等級，High/Critical）：
+  #   - sql-injection                              (CWE-89)
+  #   - command-injection                          (CWE-78)
+  #   - path-traversal-from-remote-source          (CWE-22)
+  #   - reflected-xss                              (CWE-79)
+  #   - full-ssrf / unvalidated-url-redirection    (CWE-918)
+  #   - deserialization-of-user-controlled-data    (CWE-502)
+  #
+  # ❌ 預期不再出現（warning 等級，Medium — 已被 config 排除）：
+  #   - incomplete-url-scheme-check
+  #   - incomplete-hostname-regexp
+  #   - 其他 problem.severity: warning 的查詢結果
+  - script: |
+      echo "##[section]掃描範圍說明"
+      echo "此 pipeline 使用 .github/codeql/codeql-config-high-only.yml"
+      echo "query-filters 排除 warning / recommendation 查詢："
+      echo "  → Medium / Low 漏洞不會產生 Code Scanning 告警"
+      echo "  → High / Critical 漏洞（error 等級）仍正常告警"
+      echo ""
+      echo "對照完整掃描版本：azure-pipelines.yml（無任何過濾）"
+    displayName: "[說明] CodeQL config 精細控制 — 僅告警 High/Critical"
+
+  # ── 程式碼覆蓋率（同完整版）───────────────────────────────────────────────
+
+  - script: |
+      export PATH="$HOME/.local/bin:$PATH"
+      uv run pytest --junitxml=test-results.xml
+    displayName: "執行測試並收集覆蓋率（pytest-cov → coverage.xml）"
+    continueOnError: true
+
+  - task: PublishTestResults@2
+    displayName: "發佈測試結果"
+    inputs:
+      testResultsFormat: "JUnit"
+      testResultsFiles: "test-results.xml"
+      failTaskOnFailedTests: false
+    condition: always()
+
+  - task: UseDotNet@2
+    displayName: "安裝 .NET SDK（供覆蓋率報告轉換使用）"
+    inputs:
+      packageType: sdk
+      version: "8.x"
+    condition: always()
+
+  - task: PublishCodeCoverageResults@2
+    displayName: "發佈程式碼覆蓋率報告（Cobertura → HTML）"
+    inputs:
+      summaryFileLocation: "coverage.xml"
+    condition: always()
