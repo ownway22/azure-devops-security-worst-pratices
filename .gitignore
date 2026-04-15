@@ -47,3 +47,13 @@ logs/
 .coverage
 htmlcov/
 .pytest_cache/
+
+# GitHub Copilot / agent customization files (local only)
+# Only .github/codeql is tracked; all other .github subdirs below are excluded
+.github/agents/
+.github/instructions/
+.github/prompts/
+.github/skills/
+
+# Speckit specification files
+.specify

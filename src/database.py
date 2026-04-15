@@ -1,13 +1,10 @@
-"""
-Database initialization for the GHAzDO vulnerability demo.
-Uses Python's built-in sqlite3 module with an in-memory SQLite database.
-"""
+"""SQLite 記憶體資料庫初始化 — 提供漏洞展示所需的測試資料。"""
 
 import sqlite3
 
 
 def get_db_connection() -> sqlite3.Connection:
-    """Return a new SQLite connection to the in-memory database with sample data."""
+    """建立並回傳含有測試資料的 SQLite 記憶體連線。"""
     conn = sqlite3.connect(":memory:")
     conn.row_factory = sqlite3.Row
 

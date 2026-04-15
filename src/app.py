@@ -1,7 +1,4 @@
-"""
-Flask application entry point for the GHAzDO vulnerability demo.
-Lists all intentionally vulnerable endpoints on the homepage.
-"""
+"""Flask 應用程式入口 — 組合所有漏洞藍圖，並在首頁呈現可用端點清單。"""
 
 from flask import Flask, jsonify
 
@@ -14,7 +11,7 @@ from src.vulnerabilities.xss import xss_bp
 
 app = Flask(__name__)
 
-# Register all vulnerability Blueprints
+# ── 藍圖註冊 ─────────────────────────────────────────────────────────────────
 app.register_blueprint(sql_injection_bp)
 app.register_blueprint(command_injection_bp)
 app.register_blueprint(path_traversal_bp)
@@ -70,7 +67,7 @@ ENDPOINTS = [
 
 @app.route("/")
 def index():
-    """Homepage listing all vulnerability demo endpoints."""
+    """首頁：以 HTML 表格列出全部漏洞展示端點。"""
     rows = "".join(
         f"""
         <tr>
@@ -119,7 +116,7 @@ def index():
 
 @app.route("/api/health")
 def health():
-    """Health check endpoint."""
+    """健康檢查：確認服務正常運作。"""
     return jsonify({"status": "ok"})
 
 

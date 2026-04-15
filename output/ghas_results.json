@@ -1,0 +1,1395 @@
+{
+  "count": 20,
+  "value": [
+    {
+      "alertId": 20,
+      "severity": "high",
+      "title": "urllib3 streaming API improperly handles highly compressed data (CVE-2025-66471)",
+      "tools": [
+        {
+          "name": "Advanced Security Dependency Scanning",
+          "rules": [
+            {
+              "opaqueId": "DEP1001_GHSA-2xpw-w6gg-jr37",
+              "friendlyName": "GHSA-2xpw-w6gg-jr37",
+              "description": "'requirements.txt' contains a reference to an insecure Pip package 'urllib3 1.26.14'.  Recommendation: Upgrade urllib3 from 1.26.14 to 2.6.0 to fix the vulnerability.",
+              "resources": "https://github.com/advisories/GHSA-2xpw-w6gg-jr37",
+              "helpMessage": "### Impact\n\nurllib3's [streaming API](https://urllib3.readthedocs.io/en/2.5.0/advanced-usage.html#streaming-and-i-o) is designed for the efficient handling of large HTTP responses by reading the content in chunks, rather than loading the entire response body into memory at once.\n\nWhen streaming a compressed response, urllib3 can perform decoding or decompression based on the HTTP `Content-Encoding` header (e.g., `gzip`, `deflate`, `br`, or `zstd`). The library must read compressed data from the network and decompress it until the requested chunk size is met. Any resulting decompressed data that exceeds the requested amount is held in an internal buffer for the next read operation.\n\nThe decompression logic could cause urllib3 to fully decode a small amount of highly compressed data in a single operation. This can result in excessive resource consumption (high CPU usage and massive memory allocation for the decompressed data; CWE-409) on the client side, even if the application only requested a small chunk of data.\n\n\n### Affected usages\n\nApplications and libraries using urllib3 version 2.5.0 and earlier to stream large compressed responses or content from untrusted sources.\n\n`stream()`, `read(amt=256)`, `read1(amt=256)`, `read_chunked(amt=256)`, `readinto(b)` are examples of `urllib3.HTTPResponse` method calls using the affected logic unless decoding is disabled explicitly.\n\n\n### Remediation\n\nUpgrade to at least urllib3 v2.6.0 in which the library avoids decompressing data that exceeds the requested amount.\n\nIf your environment contains a package facilitating the Brotli encoding, upgrade to at least Brotli 1.2.0 or brotlicffi 1.2.0.0 too. These versions are enforced by the `urllib3[brotli]` extra in the patched versions of urllib3.\n\n\n### Credits\n\nThe issue was reported by @Cycloctane.\nSupplemental information was provided by @stamparm during a security audit performed by [7ASecurity](https://7asecurity.com/) and facilitated by [OSTIF](https://ostif.org/).",
+              "tags": null,
+              "additionalProperties": {
+                "cveId": "CVE-2025-66471",
+                "advisoryId": "GHSA-2xpw-w6gg-jr37"
+              }
+            }
+          ]
+        }
+      ],
+      "dismissal": null,
+      "repositoryId": null,
+      "projectId": "00000000-0000-0000-0000-000000000000",
+      "repositoryUrl": "https://dev.azure.com/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61",
+      "gitRef": "refs/heads/main",
+      "alertType": "dependency",
+      "firstSeenDate": "2026-04-13T10:05:58.2391251Z",
+      "lastSeenDate": "2026-04-14T07:27:49.7461208Z",
+      "fixedDate": null,
+      "introducedDate": "2026-04-13T10:04:34Z",
+      "state": "active",
+      "physicalLocations": [
+        {
+          "versionControl": {
+            "commitHash": "8e804fe0e7289c86d4469416d48462436d15ae0c",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Frequirements.txt&version=GC8e804fe0e7289c86d4469416d48462436d15ae0c&lineStyle=plain"
+          },
+          "filePath": "requirements.txt",
+          "isValidGitPath": true,
+          "region": null,
+          "additionalProperties": null
+        }
+      ],
+      "logicalLocations": [
+        {
+          "fullyQualifiedName": "Pip requests 2.28.0",
+          "kind": "rootDependency"
+        },
+        {
+          "fullyQualifiedName": "Pip urllib3 1.26.14",
+          "kind": "rootDependency"
+        },
+        {
+          "fullyQualifiedName": "Pip urllib3 1.26.14",
+          "kind": "component"
+        }
+      ],
+      "hasTrustedSourceOrigin": true
+    },
+    {
+      "alertId": 19,
+      "severity": "high",
+      "title": "`Cookie` HTTP header isn&#39;t stripped on cross-origin redirects (CVE-2023-43804)",
+      "tools": [
+        {
+          "name": "Advanced Security Dependency Scanning",
+          "rules": [
+            {
+              "opaqueId": "DEP1001_GHSA-v845-jxx5-vc9f",
+              "friendlyName": "GHSA-v845-jxx5-vc9f",
+              "description": "'requirements.txt' contains a reference to an insecure Pip package 'urllib3 1.26.14'.  Recommendation: Upgrade urllib3 from 1.26.14 to 1.26.17 to fix the vulnerability.",
+              "resources": "https://github.com/advisories/GHSA-v845-jxx5-vc9f",
+              "helpMessage": "urllib3 doesn't treat the `Cookie` HTTP header special or provide any helpers for managing cookies over HTTP, that is the responsibility of the user. However, it is possible for a user to specify a `Cookie` header and unknowingly leak information via HTTP redirects to a different origin if that user doesn't disable redirects explicitly.\n\nUsers **must** handle redirects themselves instead of relying on urllib3's automatic redirects to achieve safe processing of the `Cookie` header, thus we decided to strip the header by default in order to further protect users who aren't using the correct approach.\n\n## Affected usages\n\nWe believe the number of usages affected by this advisory is low. It requires all of the following to be true to be exploited:\n\n* Using an affected version of urllib3 (patched in v1.26.17 and v2.0.6)\n* Using the `Cookie` header on requests, which is mostly typical for impersonating a browser.\n* Not disabling HTTP redirects\n* Either not using HTTPS or for the origin server to redirect to a malicious origin.\n\n## Remediation\n\n* Upgrading to at least urllib3 v1.26.17 or v2.0.6\n* Disabling HTTP redirects using `redirects=False` when sending requests.\n* Not using the `Cookie` header.",
+              "tags": null,
+              "additionalProperties": {
+                "cveId": "CVE-2023-43804",
+                "advisoryId": "GHSA-v845-jxx5-vc9f"
+              }
+            }
+          ]
+        }
+      ],
+      "dismissal": null,
+      "repositoryId": null,
+      "projectId": "00000000-0000-0000-0000-000000000000",
+      "repositoryUrl": "https://dev.azure.com/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61",
+      "gitRef": "refs/heads/main",
+      "alertType": "dependency",
+      "firstSeenDate": "2026-04-13T10:05:58.2391251Z",
+      "lastSeenDate": "2026-04-14T07:27:49.7461208Z",
+      "fixedDate": null,
+      "introducedDate": "2026-04-13T10:04:34Z",
+      "state": "active",
+      "physicalLocations": [
+        {
+          "versionControl": {
+            "commitHash": "8e804fe0e7289c86d4469416d48462436d15ae0c",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Frequirements.txt&version=GC8e804fe0e7289c86d4469416d48462436d15ae0c&lineStyle=plain"
+          },
+          "filePath": "requirements.txt",
+          "isValidGitPath": true,
+          "region": null,
+          "additionalProperties": null
+        }
+      ],
+      "logicalLocations": [
+        {
+          "fullyQualifiedName": "Pip requests 2.28.0",
+          "kind": "rootDependency"
+        },
+        {
+          "fullyQualifiedName": "Pip urllib3 1.26.14",
+          "kind": "rootDependency"
+        },
+        {
+          "fullyQualifiedName": "Pip urllib3 1.26.14",
+          "kind": "component"
+        }
+      ],
+      "hasTrustedSourceOrigin": true
+    },
+    {
+      "alertId": 18,
+      "severity": "medium",
+      "title": "urllib3 redirects are not disabled when retries are disabled on PoolManager instantiation (CVE-2025-50181)",
+      "tools": [
+        {
+          "name": "Advanced Security Dependency Scanning",
+          "rules": [
+            {
+              "opaqueId": "DEP1001_GHSA-pq67-6m6q-mj2v",
+              "friendlyName": "GHSA-pq67-6m6q-mj2v",
+              "description": "'requirements.txt' contains a reference to an insecure Pip package 'urllib3 1.26.14'.  Recommendation: Upgrade urllib3 from 1.26.14 to 2.5.0 to fix the vulnerability.",
+              "resources": "https://github.com/advisories/GHSA-pq67-6m6q-mj2v",
+              "helpMessage": "urllib3 handles redirects and retries using the same mechanism, which is controlled by the `Retry` object. The most common way to disable redirects is at the request level, as follows:\n\n```python\nresp = urllib3.request(\"GET\", \"https://httpbin.org/redirect/1\", redirect=False)\nprint(resp.status)\n# 302\n```\n\nHowever, it is also possible to disable redirects, for all requests, by instantiating a `PoolManager` and specifying `retries` in a way that disable redirects:\n\n```python\nimport urllib3\n\nhttp = urllib3.PoolManager(retries=0)  # should raise MaxRetryError on redirect\nhttp = urllib3.PoolManager(retries=urllib3.Retry(redirect=0))  # equivalent to the above\nhttp = urllib3.PoolManager(retries=False)  # should return the first response\n\nresp = http.request(\"GET\", \"https://httpbin.org/redirect/1\")\n```\n\nHowever, the `retries` parameter is currently ignored, which means all the above examples don't disable redirects.\n\n## Affected usages\n\nPassing `retries` on `PoolManager` instantiation to disable redirects or restrict their number.\n\nBy default, requests and botocore users are not affected.\n\n## Impact\n\nRedirects are often used to exploit SSRF vulnerabilities. An application attempting to mitigate SSRF or open redirect vulnerabilities by disabling redirects at the PoolManager level will remain vulnerable.\n\n## Remediation\n\nYou can remediate this vulnerability with the following steps:\n\n * Upgrade to a patched version of urllib3. If your organization would benefit from the continued support of urllib3 1.x, please contact [sethmichaellarson@gmail.com](mailto:sethmichaellarson@gmail.com) to discuss sponsorship or contribution opportunities.\n * Disable redirects at the `request()` level instead of the `PoolManager()` level.",
+              "tags": null,
+              "additionalProperties": {
+                "cveId": "CVE-2025-50181",
+                "advisoryId": "GHSA-pq67-6m6q-mj2v"
+              }
+            }
+          ]
+        }
+      ],
+      "dismissal": null,
+      "repositoryId": null,
+      "projectId": "00000000-0000-0000-0000-000000000000",
+      "repositoryUrl": "https://dev.azure.com/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61",
+      "gitRef": "refs/heads/main",
+      "alertType": "dependency",
+      "firstSeenDate": "2026-04-13T10:05:58.2391251Z",
+      "lastSeenDate": "2026-04-14T07:27:49.7461208Z",
+      "fixedDate": null,
+      "introducedDate": "2026-04-13T10:04:34Z",
+      "state": "active",
+      "physicalLocations": [
+        {
+          "versionControl": {
+            "commitHash": "8e804fe0e7289c86d4469416d48462436d15ae0c",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Frequirements.txt&version=GC8e804fe0e7289c86d4469416d48462436d15ae0c&lineStyle=plain"
+          },
+          "filePath": "requirements.txt",
+          "isValidGitPath": true,
+          "region": null,
+          "additionalProperties": null
+        }
+      ],
+      "logicalLocations": [
+        {
+          "fullyQualifiedName": "Pip requests 2.28.0",
+          "kind": "rootDependency"
+        },
+        {
+          "fullyQualifiedName": "Pip urllib3 1.26.14",
+          "kind": "rootDependency"
+        },
+        {
+          "fullyQualifiedName": "Pip urllib3 1.26.14",
+          "kind": "component"
+        }
+      ],
+      "hasTrustedSourceOrigin": true
+    },
+    {
+      "alertId": 17,
+      "severity": "medium",
+      "title": "Unintended leak of Proxy-Authorization header in requests (CVE-2023-32681)",
+      "tools": [
+        {
+          "name": "Advanced Security Dependency Scanning",
+          "rules": [
+            {
+              "opaqueId": "DEP1001_GHSA-j8r2-6x86-q33q",
+              "friendlyName": "GHSA-j8r2-6x86-q33q",
+              "description": "'requirements.txt' contains a reference to an insecure Pip package 'requests 2.28.0'.  Recommendation: Upgrade requests from 2.28.0 to 2.31.0 to fix the vulnerability.",
+              "resources": "https://github.com/advisories/GHSA-j8r2-6x86-q33q",
+              "helpMessage": "### Impact\n\nSince Requests v2.3.0, Requests has been vulnerable to potentially leaking `Proxy-Authorization` headers to destination servers, specifically during redirects to an HTTPS origin. This is a product of how `rebuild_proxies` is used to recompute and [reattach the `Proxy-Authorization` header](https://github.com/psf/requests/blob/f2629e9e3c7ce3c3c8c025bcd8db551101cbc773/requests/sessions.py#L319-L328) to requests when redirected. Note this behavior has _only_ been observed to affect proxied requests when credentials are supplied in the URL user information component (e.g. `https://username:password@proxy:8080`).\n\n**Current vulnerable behavior(s):**\n\n1. HTTP → HTTPS: **leak**\n2. HTTPS → HTTP: **no leak**\n3. HTTPS → HTTPS: **leak**\n4. HTTP → HTTP: **no leak**\n\nFor HTTP connections sent through the proxy, the proxy will identify the header in the request itself and remove it prior to forwarding to the destination server. However when sent over HTTPS, the `Proxy-Authorization` header must be sent in the CONNECT request as the proxy has no visibility into further tunneled requests. This results in Requests forwarding the header to the destination server unintentionally, allowing a malicious actor to potentially exfiltrate those credentials.\n\nThe reason this currently works for HTTPS connections in Requests is the `Proxy-Authorization` header is also handled by urllib3 with our usage of the ProxyManager in adapters.py with [`proxy_manager_for`](https://github.com/psf/requests/blob/f2629e9e3c7ce3c3c8c025bcd8db551101cbc773/requests/adapters.py#L199-L235). This will compute the required proxy headers in `proxy_headers` and pass them to the Proxy Manager, avoiding attaching them directly to the Request object. This will be our preferred option going forward for default usage.\n\n### Patches\nStarting in Requests v2.31.0, Requests will no longer attach this header to redirects with an HTTPS destination. This should have no negative impacts on the default behavior of the library as the proxy credentials are already properly being handled by urllib3's ProxyManager.\n\nFor users with custom adapters, this _may_ be potentially breaking if you were already working around this behavior. The previous functionality of `rebuild_proxies` doesn't make sense in any case, so we would encourage any users impacted to migrate any handling of Proxy-Authorization directly into their custom adapter.\n\n### Workarounds\nFor users who are not able to update Requests immediately, there is one potential workaround.\n\nYou may disable redirects by setting `allow_redirects` to `False` on all calls through Requests top-level APIs. Note that if you're currently relying on redirect behaviors, you will need to capture the 3xx response codes and ensure a new request is made to the redirect destination.\n```\nimport requests\nr = requests.get('http://github.com/', allow_redirects=False)\n```\n\n### Credits\n\nThis vulnerability was discovered and disclosed by the following individuals.\n\nDennis Brinkrolf, Haxolot (https://haxolot.com/)\nTobias Funke, (tobiasfunke93@gmail.com)",
+              "tags": null,
+              "additionalProperties": {
+                "cveId": "CVE-2023-32681",
+                "advisoryId": "GHSA-j8r2-6x86-q33q"
+              }
+            }
+          ]
+        }
+      ],
+      "dismissal": null,
+      "repositoryId": null,
+      "projectId": "00000000-0000-0000-0000-000000000000",
+      "repositoryUrl": "https://dev.azure.com/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61",
+      "gitRef": "refs/heads/main",
+      "alertType": "dependency",
+      "firstSeenDate": "2026-04-13T10:05:58.2391251Z",
+      "lastSeenDate": "2026-04-14T07:27:49.7461208Z",
+      "fixedDate": null,
+      "introducedDate": "2026-04-13T10:04:34Z",
+      "state": "active",
+      "physicalLocations": [
+        {
+          "versionControl": {
+            "commitHash": "8e804fe0e7289c86d4469416d48462436d15ae0c",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Frequirements.txt&version=GC8e804fe0e7289c86d4469416d48462436d15ae0c&lineStyle=plain"
+          },
+          "filePath": "requirements.txt",
+          "isValidGitPath": true,
+          "region": null,
+          "additionalProperties": null
+        }
+      ],
+      "logicalLocations": [
+        {
+          "fullyQualifiedName": "Pip requests 2.28.0",
+          "kind": "rootDependency"
+        },
+        {
+          "fullyQualifiedName": "Pip requests 2.28.0",
+          "kind": "component"
+        }
+      ],
+      "hasTrustedSourceOrigin": true
+    },
+    {
+      "alertId": 16,
+      "severity": "high",
+      "title": "urllib3 allows an unbounded number of links in the decompression chain (CVE-2025-66418)",
+      "tools": [
+        {
+          "name": "Advanced Security Dependency Scanning",
+          "rules": [
+            {
+              "opaqueId": "DEP1001_GHSA-gm62-xv2j-4w53",
+              "friendlyName": "GHSA-gm62-xv2j-4w53",
+              "description": "'requirements.txt' contains a reference to an insecure Pip package 'urllib3 1.26.14'.  Recommendation: Upgrade urllib3 from 1.26.14 to 2.6.0 to fix the vulnerability.",
+              "resources": "https://github.com/advisories/GHSA-gm62-xv2j-4w53",
+              "helpMessage": "## Impact\n\nurllib3 supports chained HTTP encoding algorithms for response content according to RFC 9110 (e.g., `Content-Encoding: gzip, zstd`).\n\nHowever, the number of links in the decompression chain was unbounded allowing a malicious server to insert a virtually unlimited number of compression steps leading to high CPU usage and massive memory allocation for the decompressed data.\n\n\n## Affected usages\n\nApplications and libraries using urllib3 version 2.5.0 and earlier for HTTP requests to untrusted sources unless they disable content decoding explicitly.\n\n\n## Remediation\n\nUpgrade to at least urllib3 v2.6.0 in which the library limits the number of links to 5.\n\nIf upgrading is not immediately possible, use [`preload_content=False`](https://urllib3.readthedocs.io/en/2.5.0/advanced-usage.html#streaming-and-i-o) and ensure that `resp.headers[\"content-encoding\"]` contains a safe number of encodings before reading the response content.",
+              "tags": null,
+              "additionalProperties": {
+                "cveId": "CVE-2025-66418",
+                "advisoryId": "GHSA-gm62-xv2j-4w53"
+              }
+            }
+          ]
+        }
+      ],
+      "dismissal": null,
+      "repositoryId": null,
+      "projectId": "00000000-0000-0000-0000-000000000000",
+      "repositoryUrl": "https://dev.azure.com/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61",
+      "gitRef": "refs/heads/main",
+      "alertType": "dependency",
+      "firstSeenDate": "2026-04-13T10:05:58.2391251Z",
+      "lastSeenDate": "2026-04-14T07:27:49.7461208Z",
+      "fixedDate": null,
+      "introducedDate": "2026-04-13T10:04:34Z",
+      "state": "active",
+      "physicalLocations": [
+        {
+          "versionControl": {
+            "commitHash": "8e804fe0e7289c86d4469416d48462436d15ae0c",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Frequirements.txt&version=GC8e804fe0e7289c86d4469416d48462436d15ae0c&lineStyle=plain"
+          },
+          "filePath": "requirements.txt",
+          "isValidGitPath": true,
+          "region": null,
+          "additionalProperties": null
+        }
+      ],
+      "logicalLocations": [
+        {
+          "fullyQualifiedName": "Pip requests 2.28.0",
+          "kind": "rootDependency"
+        },
+        {
+          "fullyQualifiedName": "Pip urllib3 1.26.14",
+          "kind": "rootDependency"
+        },
+        {
+          "fullyQualifiedName": "Pip urllib3 1.26.14",
+          "kind": "component"
+        }
+      ],
+      "hasTrustedSourceOrigin": true
+    },
+    {
+      "alertId": 15,
+      "severity": "medium",
+      "title": "Requests has Insecure Temp File Reuse in its extract_zipped_paths() utility function (CVE-2026-25645)",
+      "tools": [
+        {
+          "name": "Advanced Security Dependency Scanning",
+          "rules": [
+            {
+              "opaqueId": "DEP1001_GHSA-gc5v-m9x4-r6x2",
+              "friendlyName": "GHSA-gc5v-m9x4-r6x2",
+              "description": "'requirements.txt' contains a reference to an insecure Pip package 'requests 2.28.0'.  Recommendation: Upgrade requests from 2.28.0 to 2.33.0 to fix the vulnerability.",
+              "resources": "https://github.com/advisories/GHSA-gc5v-m9x4-r6x2",
+              "helpMessage": "### Impact\nThe `requests.utils.extract_zipped_paths()` utility function uses a predictable filename when extracting files from zip archives into the system temporary directory. If the target file already exists, it is reused without validation. A local attacker with write access to the temp directory could pre-create a malicious file that would be loaded in place of the legitimate one.\n\n### Affected usages\n**Standard usage of the Requests library is not affected by this vulnerability.** Only applications that call `extract_zipped_paths()` directly are impacted.\n\n### Remediation\nUpgrade to at least Requests 2.33.0, where the library now extracts files to a non-deterministic location.\n\nIf developers are unable to upgrade, they can set `TMPDIR` in their environment to a directory with restricted write access.",
+              "tags": null,
+              "additionalProperties": {
+                "cveId": "CVE-2026-25645",
+                "advisoryId": "GHSA-gc5v-m9x4-r6x2"
+              }
+            }
+          ]
+        }
+      ],
+      "dismissal": null,
+      "repositoryId": null,
+      "projectId": "00000000-0000-0000-0000-000000000000",
+      "repositoryUrl": "https://dev.azure.com/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61",
+      "gitRef": "refs/heads/main",
+      "alertType": "dependency",
+      "firstSeenDate": "2026-04-13T10:05:58.2391251Z",
+      "lastSeenDate": "2026-04-14T07:27:49.7461208Z",
+      "fixedDate": null,
+      "introducedDate": "2026-04-13T10:04:34Z",
+      "state": "active",
+      "physicalLocations": [
+        {
+          "versionControl": {
+            "commitHash": "8e804fe0e7289c86d4469416d48462436d15ae0c",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Frequirements.txt&version=GC8e804fe0e7289c86d4469416d48462436d15ae0c&lineStyle=plain"
+          },
+          "filePath": "requirements.txt",
+          "isValidGitPath": true,
+          "region": null,
+          "additionalProperties": null
+        }
+      ],
+      "logicalLocations": [
+        {
+          "fullyQualifiedName": "Pip requests 2.28.0",
+          "kind": "rootDependency"
+        },
+        {
+          "fullyQualifiedName": "Pip requests 2.28.0",
+          "kind": "component"
+        }
+      ],
+      "hasTrustedSourceOrigin": true
+    },
+    {
+      "alertId": 14,
+      "severity": "medium",
+      "title": "urllib3&#39;s request body not stripped after redirect from 303 status changes request method to GET (CVE-2023-45803)",
+      "tools": [
+        {
+          "name": "Advanced Security Dependency Scanning",
+          "rules": [
+            {
+              "opaqueId": "DEP1001_GHSA-g4mx-q9vg-27p4",
+              "friendlyName": "GHSA-g4mx-q9vg-27p4",
+              "description": "'requirements.txt' contains a reference to an insecure Pip package 'urllib3 1.26.14'.  Recommendation: Upgrade urllib3 from 1.26.14 to 1.26.18 to fix the vulnerability.",
+              "resources": "https://github.com/advisories/GHSA-g4mx-q9vg-27p4",
+              "helpMessage": "urllib3 previously wouldn't remove the HTTP request body when an HTTP redirect response using status 303 \"See Other\" after the request had its method changed from one that could accept a request body (like `POST`) to `GET` as is required by HTTP RFCs. Although the behavior of removing the request body is not specified in the section for redirects, it can be inferred by piecing together information from different sections and we have observed the behavior in other major HTTP client implementations like curl and web browsers.\n\nFrom [RFC 9110 Section 9.3.1](https://www.rfc-editor.org/rfc/rfc9110.html#name-get):\n\n&gt; A client SHOULD NOT generate content in a GET request unless it is made directly to an origin server that has previously indicated, in or out of band, that such a request has a purpose and will be adequately supported.\n\n## Affected usages\n\nBecause the vulnerability requires a previously trusted service to become compromised in order to have an impact on confidentiality we believe the exploitability of this vulnerability is low. Additionally, many users aren't putting sensitive data in HTTP request bodies, if this is the case then this vulnerability isn't exploitable.\n\nBoth of the following conditions must be true to be affected by this vulnerability:\n\n* If you're using urllib3 and submitting sensitive information in the HTTP request body (such as form data or JSON)\n* The origin service is compromised and starts redirecting using 303 to a malicious peer or the redirected-to service becomes compromised.\n\n## Remediation\n\nYou can remediate this vulnerability with any of the following steps:\n\n* Upgrade to a patched version of urllib3 (v1.26.18 or v2.0.7)\n* Disable redirects for services that you aren't expecting to respond with redirects with `redirects=False`.\n* Disable automatic redirects with `redirects=False` and handle 303 redirects manually by stripping the HTTP request body.",
+              "tags": null,
+              "additionalProperties": {
+                "cveId": "CVE-2023-45803",
+                "advisoryId": "GHSA-g4mx-q9vg-27p4"
+              }
+            }
+          ]
+        }
+      ],
+      "dismissal": null,
+      "repositoryId": null,
+      "projectId": "00000000-0000-0000-0000-000000000000",
+      "repositoryUrl": "https://dev.azure.com/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61",
+      "gitRef": "refs/heads/main",
+      "alertType": "dependency",
+      "firstSeenDate": "2026-04-13T10:05:58.2391251Z",
+      "lastSeenDate": "2026-04-14T07:27:49.7461208Z",
+      "fixedDate": null,
+      "introducedDate": "2026-04-13T10:04:34Z",
+      "state": "active",
+      "physicalLocations": [
+        {
+          "versionControl": {
+            "commitHash": "8e804fe0e7289c86d4469416d48462436d15ae0c",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Frequirements.txt&version=GC8e804fe0e7289c86d4469416d48462436d15ae0c&lineStyle=plain"
+          },
+          "filePath": "requirements.txt",
+          "isValidGitPath": true,
+          "region": null,
+          "additionalProperties": null
+        }
+      ],
+      "logicalLocations": [
+        {
+          "fullyQualifiedName": "Pip requests 2.28.0",
+          "kind": "rootDependency"
+        },
+        {
+          "fullyQualifiedName": "Pip urllib3 1.26.14",
+          "kind": "rootDependency"
+        },
+        {
+          "fullyQualifiedName": "Pip urllib3 1.26.14",
+          "kind": "component"
+        }
+      ],
+      "hasTrustedSourceOrigin": true
+    },
+    {
+      "alertId": 13,
+      "severity": "medium",
+      "title": "Requests `Session` object does not verify requests after making first request with verify=False (CVE-2024-35195)",
+      "tools": [
+        {
+          "name": "Advanced Security Dependency Scanning",
+          "rules": [
+            {
+              "opaqueId": "DEP1001_GHSA-9wx4-h78v-vm56",
+              "friendlyName": "GHSA-9wx4-h78v-vm56",
+              "description": "'requirements.txt' contains a reference to an insecure Pip package 'requests 2.28.0'.  Recommendation: Upgrade requests from 2.28.0 to 2.32.0 to fix the vulnerability.",
+              "resources": "https://github.com/advisories/GHSA-9wx4-h78v-vm56",
+              "helpMessage": "When using a `requests.Session`, if the first request to a given origin is made with `verify=False`, TLS certificate verification may remain disabled for all subsequent requests to that origin, even if `verify=True` is explicitly specified later.\n\nThis occurs because the underlying connection is reused from the session's connection pool, causing the initial TLS verification setting to persist for the lifetime of the pooled connection. As a result, applications may unintentionally send requests without certificate verification, leading to potential man-in-the-middle attacks and compromised confidentiality or integrity.\n\nThis behavior affects versions of `requests` prior to 2.32.0.",
+              "tags": null,
+              "additionalProperties": {
+                "cveId": "CVE-2024-35195",
+                "advisoryId": "GHSA-9wx4-h78v-vm56"
+              }
+            }
+          ]
+        }
+      ],
+      "dismissal": null,
+      "repositoryId": null,
+      "projectId": "00000000-0000-0000-0000-000000000000",
+      "repositoryUrl": "https://dev.azure.com/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61",
+      "gitRef": "refs/heads/main",
+      "alertType": "dependency",
+      "firstSeenDate": "2026-04-13T10:05:58.2391251Z",
+      "lastSeenDate": "2026-04-14T07:27:49.7461208Z",
+      "fixedDate": null,
+      "introducedDate": "2026-04-13T10:04:34Z",
+      "state": "active",
+      "physicalLocations": [
+        {
+          "versionControl": {
+            "commitHash": "8e804fe0e7289c86d4469416d48462436d15ae0c",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Frequirements.txt&version=GC8e804fe0e7289c86d4469416d48462436d15ae0c&lineStyle=plain"
+          },
+          "filePath": "requirements.txt",
+          "isValidGitPath": true,
+          "region": null,
+          "additionalProperties": null
+        }
+      ],
+      "logicalLocations": [
+        {
+          "fullyQualifiedName": "Pip requests 2.28.0",
+          "kind": "rootDependency"
+        },
+        {
+          "fullyQualifiedName": "Pip requests 2.28.0",
+          "kind": "component"
+        }
+      ],
+      "hasTrustedSourceOrigin": true
+    },
+    {
+      "alertId": 12,
+      "severity": "medium",
+      "title": "Requests vulnerable to .netrc credentials leak via malicious URLs (CVE-2024-47081)",
+      "tools": [
+        {
+          "name": "Advanced Security Dependency Scanning",
+          "rules": [
+            {
+              "opaqueId": "DEP1001_GHSA-9hjg-9r4m-mvj7",
+              "friendlyName": "GHSA-9hjg-9r4m-mvj7",
+              "description": "'requirements.txt' contains a reference to an insecure Pip package 'requests 2.28.0'.  Recommendation: Upgrade requests from 2.28.0 to 2.32.4 to fix the vulnerability.",
+              "resources": "https://github.com/advisories/GHSA-9hjg-9r4m-mvj7",
+              "helpMessage": "### Impact\n\nDue to a URL parsing issue, Requests releases prior to 2.32.4 may leak .netrc credentials to third parties for specific maliciously-crafted URLs.\n\n### Workarounds\nFor older versions of Requests, use of the .netrc file can be disabled with `trust_env=False` on your Requests Session ([docs](https://requests.readthedocs.io/en/latest/api/#requests.Session.trust_env)).\n\n### References\nhttps://github.com/psf/requests/pull/6965\nhttps://seclists.org/fulldisclosure/2025/Jun/2",
+              "tags": null,
+              "additionalProperties": {
+                "cveId": "CVE-2024-47081",
+                "advisoryId": "GHSA-9hjg-9r4m-mvj7"
+              }
+            }
+          ]
+        }
+      ],
+      "dismissal": null,
+      "repositoryId": null,
+      "projectId": "00000000-0000-0000-0000-000000000000",
+      "repositoryUrl": "https://dev.azure.com/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61",
+      "gitRef": "refs/heads/main",
+      "alertType": "dependency",
+      "firstSeenDate": "2026-04-13T10:05:58.2391251Z",
+      "lastSeenDate": "2026-04-14T07:27:49.7461208Z",
+      "fixedDate": null,
+      "introducedDate": "2026-04-13T10:04:34Z",
+      "state": "active",
+      "physicalLocations": [
+        {
+          "versionControl": {
+            "commitHash": "8e804fe0e7289c86d4469416d48462436d15ae0c",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Frequirements.txt&version=GC8e804fe0e7289c86d4469416d48462436d15ae0c&lineStyle=plain"
+          },
+          "filePath": "requirements.txt",
+          "isValidGitPath": true,
+          "region": null,
+          "additionalProperties": null
+        }
+      ],
+      "logicalLocations": [
+        {
+          "fullyQualifiedName": "Pip requests 2.28.0",
+          "kind": "rootDependency"
+        },
+        {
+          "fullyQualifiedName": "Pip requests 2.28.0",
+          "kind": "component"
+        }
+      ],
+      "hasTrustedSourceOrigin": true
+    },
+    {
+      "alertId": 11,
+      "severity": "critical",
+      "title": "Improper Input Validation in PyYAML (CVE-2020-14343)",
+      "tools": [
+        {
+          "name": "Advanced Security Dependency Scanning",
+          "rules": [
+            {
+              "opaqueId": "DEP1001_GHSA-8q59-q68h-6hv4",
+              "friendlyName": "GHSA-8q59-q68h-6hv4",
+              "description": "'requirements.txt' contains a reference to an insecure Pip package 'pyyaml 5.3.1'.  Recommendation: Upgrade PyYAML from 5.3.1 to 5.4 to fix the vulnerability.",
+              "resources": "https://github.com/advisories/GHSA-8q59-q68h-6hv4",
+              "helpMessage": "A vulnerability was discovered in the PyYAML library in versions before 5.4, where it is susceptible to arbitrary code execution when it processes untrusted YAML files through the full_load method or with the FullLoader loader. Applications that use the library to process untrusted input may be vulnerable to this flaw. This flaw allows an attacker to execute arbitrary code on the system by abusing the python/object/new constructor. This flaw is due to an incomplete fix for CVE-2020-1747.",
+              "tags": null,
+              "additionalProperties": {
+                "cveId": "CVE-2020-14343",
+                "advisoryId": "GHSA-8q59-q68h-6hv4"
+              }
+            }
+          ]
+        }
+      ],
+      "dismissal": null,
+      "repositoryId": null,
+      "projectId": "00000000-0000-0000-0000-000000000000",
+      "repositoryUrl": "https://dev.azure.com/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61",
+      "gitRef": "refs/heads/main",
+      "alertType": "dependency",
+      "firstSeenDate": "2026-04-13T10:05:58.2391251Z",
+      "lastSeenDate": "2026-04-14T07:27:49.7461208Z",
+      "fixedDate": null,
+      "introducedDate": "2026-04-13T10:04:34Z",
+      "state": "active",
+      "physicalLocations": [
+        {
+          "versionControl": {
+            "commitHash": "8e804fe0e7289c86d4469416d48462436d15ae0c",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Frequirements.txt&version=GC8e804fe0e7289c86d4469416d48462436d15ae0c&lineStyle=plain"
+          },
+          "filePath": "requirements.txt",
+          "isValidGitPath": true,
+          "region": null,
+          "additionalProperties": null
+        }
+      ],
+      "logicalLocations": [
+        {
+          "fullyQualifiedName": "Pip pyyaml 5.3.1",
+          "kind": "rootDependency"
+        },
+        {
+          "fullyQualifiedName": "Pip pyyaml 5.3.1",
+          "kind": "component"
+        }
+      ],
+      "hasTrustedSourceOrigin": true
+    },
+    {
+      "alertId": 10,
+      "severity": "high",
+      "title": "Decompression-bomb safeguards bypassed when following HTTP redirects (streaming API) (CVE-2026-21441)",
+      "tools": [
+        {
+          "name": "Advanced Security Dependency Scanning",
+          "rules": [
+            {
+              "opaqueId": "DEP1001_GHSA-38jv-5279-wg99",
+              "friendlyName": "GHSA-38jv-5279-wg99",
+              "description": "'requirements.txt' contains a reference to an insecure Pip package 'urllib3 1.26.14'.  Recommendation: Upgrade urllib3 from 1.26.14 to 2.6.3 to fix the vulnerability.",
+              "resources": "https://github.com/advisories/GHSA-38jv-5279-wg99",
+              "helpMessage": "### Impact\n\nurllib3's [streaming API](https://urllib3.readthedocs.io/en/2.6.2/advanced-usage.html#streaming-and-i-o) is designed for the efficient handling of large HTTP responses by reading the content in chunks, rather than loading the entire response body into memory at once.\n\nurllib3 can perform decoding or decompression based on the HTTP `Content-Encoding` header (e.g., `gzip`, `deflate`, `br`, or `zstd`). When using the streaming API, the library decompresses only the necessary bytes, enabling partial content consumption.\n\nHowever, for HTTP redirect responses, the library would read the entire response body to drain the connection and decompress the content unnecessarily. This decompression occurred even before any read methods were called, and configured read limits did not restrict the amount of decompressed data. As a result, there was no safeguard against decompression bombs. A malicious server could exploit this to trigger excessive resource consumption on the client (high CPU usage and large memory allocations for decompressed data; CWE-409).\n\n### Affected usages\n\nApplications and libraries using urllib3 version 2.6.2 and earlier to stream content from untrusted sources by setting `preload_content=False` when they do not disable redirects.\n\n\n### Remediation\n\nUpgrade to at least urllib3 v2.6.3 in which the library does not decode content of redirect responses when `preload_content=False`.\n\nIf upgrading is not immediately possible, disable [redirects](https://urllib3.readthedocs.io/en/2.6.2/user-guide.html#retrying-requests) by setting `redirect=False` for requests to untrusted source.",
+              "tags": null,
+              "additionalProperties": {
+                "cveId": "CVE-2026-21441",
+                "advisoryId": "GHSA-38jv-5279-wg99"
+              }
+            }
+          ]
+        }
+      ],
+      "dismissal": null,
+      "repositoryId": null,
+      "projectId": "00000000-0000-0000-0000-000000000000",
+      "repositoryUrl": "https://dev.azure.com/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61",
+      "gitRef": "refs/heads/main",
+      "alertType": "dependency",
+      "firstSeenDate": "2026-04-13T10:05:58.2391251Z",
+      "lastSeenDate": "2026-04-14T07:27:49.7461208Z",
+      "fixedDate": null,
+      "introducedDate": "2026-04-13T10:04:34Z",
+      "state": "active",
+      "physicalLocations": [
+        {
+          "versionControl": {
+            "commitHash": "8e804fe0e7289c86d4469416d48462436d15ae0c",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Frequirements.txt&version=GC8e804fe0e7289c86d4469416d48462436d15ae0c&lineStyle=plain"
+          },
+          "filePath": "requirements.txt",
+          "isValidGitPath": true,
+          "region": null,
+          "additionalProperties": null
+        }
+      ],
+      "logicalLocations": [
+        {
+          "fullyQualifiedName": "Pip requests 2.28.0",
+          "kind": "rootDependency"
+        },
+        {
+          "fullyQualifiedName": "Pip urllib3 1.26.14",
+          "kind": "rootDependency"
+        },
+        {
+          "fullyQualifiedName": "Pip urllib3 1.26.14",
+          "kind": "component"
+        }
+      ],
+      "hasTrustedSourceOrigin": true
+    },
+    {
+      "alertId": 9,
+      "severity": "medium",
+      "title": "urllib3&#39;s Proxy-Authorization request header isn&#39;t stripped during cross-origin redirects (CVE-2024-37891)",
+      "tools": [
+        {
+          "name": "Advanced Security Dependency Scanning",
+          "rules": [
+            {
+              "opaqueId": "DEP1001_GHSA-34jh-p97f-mpxf",
+              "friendlyName": "GHSA-34jh-p97f-mpxf",
+              "description": "'requirements.txt' contains a reference to an insecure Pip package 'urllib3 1.26.14'.  Recommendation: Upgrade urllib3 from 1.26.14 to 1.26.19 to fix the vulnerability.",
+              "resources": "https://github.com/advisories/GHSA-34jh-p97f-mpxf",
+              "helpMessage": "When using urllib3's proxy support with `ProxyManager`, the `Proxy-Authorization` header is only sent to the configured proxy, as expected.\n\nHowever, when sending HTTP requests *without* using urllib3's proxy support, it's possible to accidentally configure the `Proxy-Authorization` header even though it won't have any effect as the request is not using a forwarding proxy or a tunneling proxy. In those cases, urllib3 doesn't treat the `Proxy-Authorization` HTTP header as one carrying authentication material and thus doesn't strip the header on cross-origin redirects.\n\nBecause this is a highly unlikely scenario, we believe the severity of this vulnerability is low for almost all users. Out of an abundance of caution urllib3 will automatically strip the `Proxy-Authorization` header during cross-origin redirects to avoid the small chance that users are doing this on accident.\n\nUsers should use urllib3's proxy support or disable automatic redirects to achieve safe processing of the `Proxy-Authorization` header, but we still decided to strip the header by default in order to further protect users who aren't using the correct approach.\n\n## Affected usages\n\nWe believe the number of usages affected by this advisory is low. It requires all of the following to be true to be exploited:\n\n* Setting the `Proxy-Authorization` header without using urllib3's built-in proxy support.\n* Not disabling HTTP redirects.\n* Either not using an HTTPS origin server or for the proxy or target origin to redirect to a malicious origin.\n\n## Remediation\n\n* Using the `Proxy-Authorization` header with urllib3's `ProxyManager`.\n* Disabling HTTP redirects using `redirects=False` when sending requests.\n* Not using the `Proxy-Authorization` header.",
+              "tags": null,
+              "additionalProperties": {
+                "cveId": "CVE-2024-37891",
+                "advisoryId": "GHSA-34jh-p97f-mpxf"
+              }
+            }
+          ]
+        }
+      ],
+      "dismissal": null,
+      "repositoryId": null,
+      "projectId": "00000000-0000-0000-0000-000000000000",
+      "repositoryUrl": "https://dev.azure.com/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61",
+      "gitRef": "refs/heads/main",
+      "alertType": "dependency",
+      "firstSeenDate": "2026-04-13T10:05:58.2391251Z",
+      "lastSeenDate": "2026-04-14T07:27:49.7461208Z",
+      "fixedDate": null,
+      "introducedDate": "2026-04-13T10:04:34Z",
+      "state": "active",
+      "physicalLocations": [
+        {
+          "versionControl": {
+            "commitHash": "8e804fe0e7289c86d4469416d48462436d15ae0c",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Frequirements.txt&version=GC8e804fe0e7289c86d4469416d48462436d15ae0c&lineStyle=plain"
+          },
+          "filePath": "requirements.txt",
+          "isValidGitPath": true,
+          "region": null,
+          "additionalProperties": null
+        }
+      ],
+      "logicalLocations": [
+        {
+          "fullyQualifiedName": "Pip requests 2.28.0",
+          "kind": "rootDependency"
+        },
+        {
+          "fullyQualifiedName": "Pip urllib3 1.26.14",
+          "kind": "rootDependency"
+        },
+        {
+          "fullyQualifiedName": "Pip urllib3 1.26.14",
+          "kind": "component"
+        }
+      ],
+      "hasTrustedSourceOrigin": true
+    },
+    {
+      "alertId": 8,
+      "severity": "critical",
+      "title": "Slack web hook",
+      "tools": [
+        {
+          "name": "Advanced Security Secrets Scanning",
+          "rules": [
+            {
+              "opaqueId": "SEC101/012",
+              "friendlyName": "SlackWebhook",
+              "description": "Do not expose plaintext (or base64-encoded plaintext) secrets in versioned engineering content.",
+              "resources": "",
+              "helpMessage": "## Remediation steps\n\nFollow the steps below before you close this alert:\n\n1. Rotate the secret and store securely if it's in use to prevent breaking workflows.\n2. Revoke this Slack web hook to prevent unauthorized access.&nbsp;\n3. Check security logs for potential breaches.\n4. Close the alert as revoked.",
+              "tags": null,
+              "additionalProperties": {}
+            }
+          ]
+        }
+      ],
+      "dismissal": null,
+      "repositoryId": null,
+      "projectId": "00000000-0000-0000-0000-000000000000",
+      "repositoryUrl": "https://dev.azure.com/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61",
+      "gitRef": null,
+      "alertType": "secret",
+      "firstSeenDate": "2026-04-13T07:58:21.7499389Z",
+      "lastSeenDate": "2026-04-13T08:53:08.1165641Z",
+      "fixedDate": null,
+      "introducedDate": "2026-04-13T07:53:57Z",
+      "state": "active",
+      "physicalLocations": [
+        {
+          "versionControl": {
+            "commitHash": "f03f29f4385d2ee58d017020da7d71c557245ce3",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Fconfig%2Fsettings.yaml&version=GCf03f29f4385d2ee58d017020da7d71c557245ce3&line=22&lineEnd=22&lineStartColumn=68&lineEndColumn=104&lineStyle=plain"
+          },
+          "filePath": "config/settings.yaml",
+          "isValidGitPath": true,
+          "region": {
+            "lineStart": 22,
+            "lineEnd": 22,
+            "columnStart": 68,
+            "columnEnd": 104
+          },
+          "additionalProperties": {}
+        },
+        {
+          "versionControl": {
+            "commitHash": "f03f29f4385d2ee58d017020da7d71c557245ce3",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Fconfig%2Fsettings.yaml&version=GCf03f29f4385d2ee58d017020da7d71c557245ce3&line=23&lineEnd=23&lineStartColumn=68&lineEndColumn=104&lineStyle=plain"
+          },
+          "filePath": "config/settings.yaml",
+          "isValidGitPath": true,
+          "region": {
+            "lineStart": 23,
+            "lineEnd": 23,
+            "columnStart": 68,
+            "columnEnd": 104
+          },
+          "additionalProperties": {}
+        }
+      ],
+      "logicalLocations": [],
+      "truncatedSecret": "&hellip;e9fghi",
+      "confidence": "high",
+      "hasTrustedSourceOrigin": true
+    },
+    {
+      "alertId": 7,
+      "severity": "critical",
+      "title": "Deserialization of user-controlled data (py/unsafe-deserialization)",
+      "tools": [
+        {
+          "name": "CodeQL",
+          "rules": [
+            {
+              "opaqueId": "py/unsafe-deserialization",
+              "friendlyName": "py/unsafe-deserialization",
+              "description": "Deserializing user-controlled data may allow attackers to execute arbitrary code.",
+              "resources": "\n* OWASP vulnerability description: [Deserialization of untrusted data](https://www.owasp.org/index.php/Deserialization_of_untrusted_data).\n* OWASP guidance on deserializing objects: [Deserialization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html).\n* Talks by Chris Frohoff &amp; Gabriel Lawrence: [ AppSecCali 2015: Marshalling Pickles - how deserializing objects will ruin your day](http://frohoff.github.io/appseccali-marshalling-pickles/)\n* Common Weakness Enumeration: [CWE-502](https://cwe.mitre.org/data/definitions/502.html).\n",
+              "helpMessage": "# Deserialization of user-controlled data\nDeserializing untrusted data using any deserialization framework that allows the construction of arbitrary serializable objects is easily exploitable and in many cases allows an attacker to execute arbitrary code. Even before a deserialized object is returned to the caller of a deserialization method a lot of code may have been executed, including static initializers, constructors, and finalizers. Automatic deserialization of fields means that an attacker may craft a nested combination of objects on which the executed initialization code may have unforeseen effects, such as the execution of arbitrary code.\n\nThere are many different serialization frameworks. This query currently supports Pickle, Marshal and Yaml.\n\n\n## Recommendation\nAvoid deserialization of untrusted data if at all possible. If the architecture permits it then use other formats instead of serialized objects, for example JSON.\n\nIf you need to use YAML, use the `yaml.safe_load` function.\n\n\n## Example\nThe following example calls `pickle.loads` directly on a value provided by an incoming HTTP request. Pickle then creates a new value from untrusted data, and is therefore inherently unsafe.\n\n\n```python\n\nfrom django.conf.urls import url\nimport pickle\n\ndef unsafe(pickled):\n    return pickle.loads(pickled)\n\nurlpatterns = [\n    url(r'^(?P.*)$', unsafe)\n]\n```\nChanging the code to use `json.loads` instead of `pickle.loads` removes the vulnerability.\n\n\n```python\n\nfrom django.conf.urls import url\nimport json\n\ndef safe(pickled):\n    return json.loads(pickled)\n\nurlpatterns = [\n    url(r'^(?P.*)$', safe)\n]\n\n```\n\n## References\n* OWASP vulnerability description: [Deserialization of untrusted data](https://www.owasp.org/index.php/Deserialization_of_untrusted_data).\n* OWASP guidance on deserializing objects: [Deserialization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html).\n* Talks by Chris Frohoff &amp; Gabriel Lawrence: [ AppSecCali 2015: Marshalling Pickles - how deserializing objects will ruin your day](http://frohoff.github.io/appseccali-marshalling-pickles/)\n* Common Weakness Enumeration: [CWE-502](https://cwe.mitre.org/data/definitions/502.html).\n",
+              "tags": [
+                "external/cwe/cwe-502",
+                "security",
+                "serialization"
+              ],
+              "additionalProperties": {}
+            }
+          ]
+        }
+      ],
+      "dismissal": null,
+      "repositoryId": null,
+      "projectId": "00000000-0000-0000-0000-000000000000",
+      "repositoryUrl": "https://dev.azure.com/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61",
+      "gitRef": "refs/heads/main",
+      "alertType": "code",
+      "firstSeenDate": "2026-04-13T07:33:09.4849235Z",
+      "lastSeenDate": "2026-04-14T07:27:39.9658048Z",
+      "fixedDate": null,
+      "introducedDate": "2026-04-13T07:30:29Z",
+      "state": "active",
+      "physicalLocations": [
+        {
+          "versionControl": {
+            "commitHash": "524fb23ecb8d4c7be62c5c9bfbea393dbb046bed",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Fsrc%2Fvulnerabilities%2Finsecure_deserialization.py&version=GC524fb23ecb8d4c7be62c5c9bfbea393dbb046bed&line=23&lineEnd=23&lineStartColumn=24&lineEndColumn=46&lineStyle=plain"
+          },
+          "filePath": "src/vulnerabilities/insecure_deserialization.py",
+          "isValidGitPath": true,
+          "region": {
+            "lineStart": 23,
+            "lineEnd": 0,
+            "columnStart": 24,
+            "columnEnd": 46
+          },
+          "additionalProperties": null
+        },
+        {
+          "versionControl": {
+            "commitHash": "8e804fe0e7289c86d4469416d48462436d15ae0c",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Fsrc%2Fvulnerabilities%2Finsecure_deserialization.py&version=GC8e804fe0e7289c86d4469416d48462436d15ae0c&line=23&lineEnd=23&lineStartColumn=24&lineEndColumn=46&lineStyle=plain"
+          },
+          "filePath": "src/vulnerabilities/insecure_deserialization.py",
+          "isValidGitPath": true,
+          "region": {
+            "lineStart": 23,
+            "lineEnd": 0,
+            "columnStart": 24,
+            "columnEnd": 46
+          },
+          "additionalProperties": null
+        },
+        {
+          "versionControl": {
+            "commitHash": "ea28eb217a1ceb7e98167db3c3e26ce48277d617",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Fsrc%2Fvulnerabilities%2Finsecure_deserialization.py&version=GCea28eb217a1ceb7e98167db3c3e26ce48277d617&line=23&lineEnd=23&lineStartColumn=24&lineEndColumn=46&lineStyle=plain"
+          },
+          "filePath": "src/vulnerabilities/insecure_deserialization.py",
+          "isValidGitPath": true,
+          "region": {
+            "lineStart": 23,
+            "lineEnd": 0,
+            "columnStart": 24,
+            "columnEnd": 46
+          },
+          "additionalProperties": null
+        }
+      ],
+      "logicalLocations": [],
+      "hasTrustedSourceOrigin": true
+    },
+    {
+      "alertId": 6,
+      "severity": "high",
+      "title": "SQL query built from user-controlled sources (py/sql-injection)",
+      "tools": [
+        {
+          "name": "CodeQL",
+          "rules": [
+            {
+              "opaqueId": "py/sql-injection",
+              "friendlyName": "py/sql-injection",
+              "description": "Building a SQL query from user-controlled sources is vulnerable to insertion of malicious SQL code by the user.",
+              "resources": "\n* Wikipedia: [SQL injection](https://en.wikipedia.org/wiki/SQL_injection).\n* OWASP: [SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html).\n* [SQLAlchemy documentation for TextClause](https://docs.sqlalchemy.org/en/14/core/sqlelement.html#sqlalchemy.sql.expression.text.params.text).\n* Common Weakness Enumeration: [CWE-89](https://cwe.mitre.org/data/definitions/89.html).\n",
+              "helpMessage": "# SQL query built from user-controlled sources\nIf a database query (such as a SQL or NoSQL query) is built from user-provided data without sufficient sanitization, a user may be able to run malicious database queries.\n\nThis also includes using the `TextClause` class in the `[SQLAlchemy](https://pypi.org/project/SQLAlchemy/)` PyPI package, which is used to represent a literal SQL fragment and is inserted directly into the final SQL when used in a query built using the ORM.\n\n\n## Recommendation\nMost database connector libraries offer a way of safely embedding untrusted data into a query by means of query parameters or prepared statements.\n\n\n## Example\nIn the following snippet, a user is fetched from the database using three different queries.\n\nIn the first case, the query string is built by directly using string formatting from a user-supplied request parameter. The parameter may include quote characters, so this code is vulnerable to a SQL injection attack.\n\nIn the second case, the user-supplied request attribute is passed to the database using query parameters. The database connector library will take care of escaping and inserting quotes as needed.\n\nIn the third case, the placeholder in the SQL string has been manually quoted. Since most databaseconnector libraries will insert their own quotes, doing so yourself will make the code vulnerable to SQL injection attacks. In this example, if `username` was `; DROP ALL TABLES -- `, the final SQL query would be `SELECT * FROM users WHERE username = ''; DROP ALL TABLES -- ''`\n\n\n```python\nfrom django.conf.urls import url\nfrom django.db import connection\n\n\ndef show_user(request, username):\n    with connection.cursor() as cursor:\n        # BAD -- Using string formatting\n        cursor.execute(\"SELECT * FROM users WHERE username = '%s'\" % username)\n        user = cursor.fetchone()\n\n        # GOOD -- Using parameters\n        cursor.execute(\"SELECT * FROM users WHERE username = %s\", username)\n        user = cursor.fetchone()\n\n        # BAD -- Manually quoting placeholder (%s)\n        cursor.execute(\"SELECT * FROM users WHERE username = '%s'\", username)\n        user = cursor.fetchone()\n\nurlpatterns = [url(r'^users/(?P&lt;username&gt;[^/]+)$', show_user)]\n\n```\n\n## References\n* Wikipedia: [SQL injection](https://en.wikipedia.org/wiki/SQL_injection).\n* OWASP: [SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html).\n* [SQLAlchemy documentation for TextClause](https://docs.sqlalchemy.org/en/14/core/sqlelement.html#sqlalchemy.sql.expression.text.params.text).\n* Common Weakness Enumeration: [CWE-89](https://cwe.mitre.org/data/definitions/89.html).\n",
+              "tags": [
+                "security",
+                "external/cwe/cwe-089"
+              ],
+              "additionalProperties": {}
+            }
+          ]
+        }
+      ],
+      "dismissal": null,
+      "repositoryId": null,
+      "projectId": "00000000-0000-0000-0000-000000000000",
+      "repositoryUrl": "https://dev.azure.com/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61",
+      "gitRef": "refs/heads/main",
+      "alertType": "code",
+      "firstSeenDate": "2026-04-13T07:33:09.4849235Z",
+      "lastSeenDate": "2026-04-14T07:27:39.9658048Z",
+      "fixedDate": null,
+      "introducedDate": "2026-04-13T07:30:29Z",
+      "state": "active",
+      "physicalLocations": [
+        {
+          "versionControl": {
+            "commitHash": "524fb23ecb8d4c7be62c5c9bfbea393dbb046bed",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Fsrc%2Fvulnerabilities%2Fsql_injection.py&version=GC524fb23ecb8d4c7be62c5c9bfbea393dbb046bed&line=23&lineEnd=23&lineStartColumn=27&lineEndColumn=32&lineStyle=plain"
+          },
+          "filePath": "src/vulnerabilities/sql_injection.py",
+          "isValidGitPath": true,
+          "region": {
+            "lineStart": 23,
+            "lineEnd": 0,
+            "columnStart": 27,
+            "columnEnd": 32
+          },
+          "additionalProperties": null
+        },
+        {
+          "versionControl": {
+            "commitHash": "8e804fe0e7289c86d4469416d48462436d15ae0c",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Fsrc%2Fvulnerabilities%2Fsql_injection.py&version=GC8e804fe0e7289c86d4469416d48462436d15ae0c&line=23&lineEnd=23&lineStartColumn=27&lineEndColumn=32&lineStyle=plain"
+          },
+          "filePath": "src/vulnerabilities/sql_injection.py",
+          "isValidGitPath": true,
+          "region": {
+            "lineStart": 23,
+            "lineEnd": 0,
+            "columnStart": 27,
+            "columnEnd": 32
+          },
+          "additionalProperties": null
+        },
+        {
+          "versionControl": {
+            "commitHash": "ea28eb217a1ceb7e98167db3c3e26ce48277d617",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Fsrc%2Fvulnerabilities%2Fsql_injection.py&version=GCea28eb217a1ceb7e98167db3c3e26ce48277d617&line=23&lineEnd=23&lineStartColumn=27&lineEndColumn=32&lineStyle=plain"
+          },
+          "filePath": "src/vulnerabilities/sql_injection.py",
+          "isValidGitPath": true,
+          "region": {
+            "lineStart": 23,
+            "lineEnd": 0,
+            "columnStart": 27,
+            "columnEnd": 32
+          },
+          "additionalProperties": null
+        }
+      ],
+      "logicalLocations": [],
+      "hasTrustedSourceOrigin": true
+    },
+    {
+      "alertId": 5,
+      "severity": "medium",
+      "title": "Reflected server-side cross-site scripting (py/reflective-xss)",
+      "tools": [
+        {
+          "name": "CodeQL",
+          "rules": [
+            {
+              "opaqueId": "py/reflective-xss",
+              "friendlyName": "py/reflective-xss",
+              "description": "Writing user input directly to a web page allows for a cross-site scripting vulnerability.",
+              "resources": "\n* OWASP: [XSS (Cross Site Scripting) Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html).\n* Wikipedia: [Cross-site scripting](http://en.wikipedia.org/wiki/Cross-site_scripting).\n* Python Library Reference: [html.escape()](https://docs.python.org/3/library/html.html#html.escape).\n* Common Weakness Enumeration: [CWE-79](https://cwe.mitre.org/data/definitions/79.html).\n* Common Weakness Enumeration: [CWE-116](https://cwe.mitre.org/data/definitions/116.html).\n",
+              "helpMessage": "# Reflected server-side cross-site scripting\nDirectly writing user input (for example, an HTTP request parameter) to a webpage without properly sanitizing the input first, allows for a cross-site scripting vulnerability.\n\n\n## Recommendation\nTo guard against cross-site scripting, consider escaping the input before writing user input to the page. The standard library provides escaping functions: `html.escape()` for Python 3.2 upwards or `cgi.escape()` older versions of Python. Most frameworks also provide their own escaping functions, for example `flask.escape()`.\n\n\n## Example\nThe following example is a minimal flask app which shows a safe and unsafe way to render the given name back to the page. The first view is unsafe as `first_name` is not escaped, leaving the page vulnerable to cross-site scripting attacks. The second view is safe as `first_name` is escaped, so it is not vulnerable to cross-site scripting attacks.\n\n\n```python\nfrom flask import Flask, request, make_response, escape\n\napp = Flask(__name__)\n\n@app.route('/unsafe')\ndef unsafe():\n    first_name = request.args.get('name', '')\n    return make_response(\"Your name is \" + first_name)\n\n@app.route('/safe')\ndef safe():\n    first_name = request.args.get('name', '')\n    return make_response(\"Your name is \" + escape(first_name))\n\n```\n\n## References\n* OWASP: [XSS (Cross Site Scripting) Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html).\n* Wikipedia: [Cross-site scripting](http://en.wikipedia.org/wiki/Cross-site_scripting).\n* Python Library Reference: [html.escape()](https://docs.python.org/3/library/html.html#html.escape).\n* Common Weakness Enumeration: [CWE-79](https://cwe.mitre.org/data/definitions/79.html).\n* Common Weakness Enumeration: [CWE-116](https://cwe.mitre.org/data/definitions/116.html).\n",
+              "tags": [
+                "security",
+                "external/cwe/cwe-079",
+                "external/cwe/cwe-116"
+              ],
+              "additionalProperties": {}
+            }
+          ]
+        }
+      ],
+      "dismissal": null,
+      "repositoryId": null,
+      "projectId": "00000000-0000-0000-0000-000000000000",
+      "repositoryUrl": "https://dev.azure.com/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61",
+      "gitRef": "refs/heads/main",
+      "alertType": "code",
+      "firstSeenDate": "2026-04-13T07:33:09.4849235Z",
+      "lastSeenDate": "2026-04-14T07:27:39.9658048Z",
+      "fixedDate": null,
+      "introducedDate": "2026-04-13T07:30:29Z",
+      "state": "active",
+      "physicalLocations": [
+        {
+          "versionControl": {
+            "commitHash": "524fb23ecb8d4c7be62c5c9bfbea393dbb046bed",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Fsrc%2Fvulnerabilities%2Fxss.py&version=GC524fb23ecb8d4c7be62c5c9bfbea393dbb046bed&line=20&lineEnd=20&lineStartColumn=30&lineEndColumn=34&lineStyle=plain"
+          },
+          "filePath": "src/vulnerabilities/xss.py",
+          "isValidGitPath": true,
+          "region": {
+            "lineStart": 20,
+            "lineEnd": 0,
+            "columnStart": 30,
+            "columnEnd": 34
+          },
+          "additionalProperties": null
+        },
+        {
+          "versionControl": {
+            "commitHash": "8e804fe0e7289c86d4469416d48462436d15ae0c",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Fsrc%2Fvulnerabilities%2Fxss.py&version=GC8e804fe0e7289c86d4469416d48462436d15ae0c&line=20&lineEnd=20&lineStartColumn=30&lineEndColumn=34&lineStyle=plain"
+          },
+          "filePath": "src/vulnerabilities/xss.py",
+          "isValidGitPath": true,
+          "region": {
+            "lineStart": 20,
+            "lineEnd": 0,
+            "columnStart": 30,
+            "columnEnd": 34
+          },
+          "additionalProperties": null
+        },
+        {
+          "versionControl": {
+            "commitHash": "ea28eb217a1ceb7e98167db3c3e26ce48277d617",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Fsrc%2Fvulnerabilities%2Fxss.py&version=GCea28eb217a1ceb7e98167db3c3e26ce48277d617&line=20&lineEnd=20&lineStartColumn=30&lineEndColumn=34&lineStyle=plain"
+          },
+          "filePath": "src/vulnerabilities/xss.py",
+          "isValidGitPath": true,
+          "region": {
+            "lineStart": 20,
+            "lineEnd": 0,
+            "columnStart": 30,
+            "columnEnd": 34
+          },
+          "additionalProperties": null
+        }
+      ],
+      "logicalLocations": [],
+      "hasTrustedSourceOrigin": true
+    },
+    {
+      "alertId": 4,
+      "severity": "high",
+      "title": "Uncontrolled data used in path expression (py/path-injection)",
+      "tools": [
+        {
+          "name": "CodeQL",
+          "rules": [
+            {
+              "opaqueId": "py/path-injection",
+              "friendlyName": "py/path-injection",
+              "description": "Accessing paths influenced by users can allow an attacker to access unexpected resources.",
+              "resources": "\n* OWASP: [Path Traversal](https://owasp.org/www-community/attacks/Path_Traversal).\n* npm: [werkzeug.utils.secure_filename](http://werkzeug.pocoo.org/docs/utils/#werkzeug.utils.secure_filename).\n* Common Weakness Enumeration: [CWE-22](https://cwe.mitre.org/data/definitions/22.html).\n* Common Weakness Enumeration: [CWE-23](https://cwe.mitre.org/data/definitions/23.html).\n* Common Weakness Enumeration: [CWE-36](https://cwe.mitre.org/data/definitions/36.html).\n* Common Weakness Enumeration: [CWE-73](https://cwe.mitre.org/data/definitions/73.html).\n* Common Weakness Enumeration: [CWE-99](https://cwe.mitre.org/data/definitions/99.html).\n",
+              "helpMessage": "# Uncontrolled data used in path expression\nAccessing files using paths constructed from user-controlled data can allow an attacker to access unexpected resources. This can result in sensitive information being revealed or deleted, or an attacker being able to influence behavior by modifying unexpected files.\n\n\n## Recommendation\nValidate paths constructed from untrusted user input before using them to access files.\n\nThe choice of validation depends on the use case.\n\nIf you want to allow paths spanning multiple folders, a common strategy is to make sure that the constructed file path is contained within a safe root folder. First, normalize the path using `os.path.normpath` or `os.path.realpath` (make sure to use the latter if symlinks are a consideration) to remove any internal \"..\" segments and/or follow links. Then check that the normalized path starts with the root folder. Note that the normalization step is important, since otherwise even a path that starts with the root folder could be used to access files outside the root folder.\n\nMore restrictive options include using a library function like `werkzeug.utils.secure_filename` to eliminate any special characters from the file path, or restricting the path to a known list of safe paths. These options are safe, but can only be used in particular circumstances.\n\n\n## Example\nIn the first example, a file name is read from an HTTP request and then used to access a file. However, a malicious user could enter a file name that is an absolute path, such as `\"/etc/passwd\"`.\n\nIn the second example, it appears that the user is restricted to opening a file within the `\"user\"` home directory. However, a malicious user could enter a file name containing special characters. For example, the string `\"../../../etc/passwd\"` will result in the code reading the file located at `\"/server/static/images/../../../etc/passwd\"`, which is the system's password file. This file would then be sent back to the user, giving them access to all the system's passwords. Note that a user could also use an absolute path here, since the result of `os.path.join(\"/server/static/images/\", \"/etc/passwd\")` is `\"/etc/passwd\"`.\n\nIn the third example, the path used to access the file system is normalized *before* being checked against a known prefix. This ensures that regardless of the user input, the resulting path is safe.\n\n\n```python\nimport os.path\nfrom flask import Flask, request, abort\n\napp = Flask(__name__)\n\n@app.route(\"/user_picture1\")\ndef user_picture1():\n    filename = request.args.get('p')\n    # BAD: This could read any file on the file system\n    data = open(filename, 'rb').read()\n    return data\n\n@app.route(\"/user_picture2\")\ndef user_picture2():\n    base_path = '/server/static/images'\n    filename = request.args.get('p')\n    # BAD: This could still read any file on the file system\n    data = open(os.path.join(base_path, filename), 'rb').read()\n    return data\n\n@app.route(\"/user_picture3\")\ndef user_picture3():\n    base_path = '/server/static/images'\n    filename = request.args.get('p')\n    #GOOD -- Verify with normalised version of path\n    fullpath = os.path.normpath(os.path.join(base_path, filename))\n    if not fullpath.startswith(base_path):\n        raise Exception(\"not allowed\")\n    data = open(fullpath, 'rb').read()\n    return data\n\n```\n\n## References\n* OWASP: [Path Traversal](https://owasp.org/www-community/attacks/Path_Traversal).\n* npm: [werkzeug.utils.secure_filename](http://werkzeug.pocoo.org/docs/utils/#werkzeug.utils.secure_filename).\n* Common Weakness Enumeration: [CWE-22](https://cwe.mitre.org/data/definitions/22.html).\n* Common Weakness Enumeration: [CWE-23](https://cwe.mitre.org/data/definitions/23.html).\n* Common Weakness Enumeration: [CWE-36](https://cwe.mitre.org/data/definitions/36.html).\n* Common Weakness Enumeration: [CWE-73](https://cwe.mitre.org/data/definitions/73.html).\n* Common Weakness Enumeration: [CWE-99](https://cwe.mitre.org/data/definitions/99.html).\n",
+              "tags": [
+                "correctness",
+                "security",
+                "external/cwe/cwe-022",
+                "external/cwe/cwe-023",
+                "external/cwe/cwe-036",
+                "external/cwe/cwe-073",
+                "external/cwe/cwe-099"
+              ],
+              "additionalProperties": {}
+            }
+          ]
+        }
+      ],
+      "dismissal": null,
+      "repositoryId": null,
+      "projectId": "00000000-0000-0000-0000-000000000000",
+      "repositoryUrl": "https://dev.azure.com/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61",
+      "gitRef": "refs/heads/main",
+      "alertType": "code",
+      "firstSeenDate": "2026-04-13T07:33:09.4849235Z",
+      "lastSeenDate": "2026-04-14T07:27:39.9658048Z",
+      "fixedDate": null,
+      "introducedDate": "2026-04-13T07:30:29Z",
+      "state": "active",
+      "physicalLocations": [
+        {
+          "versionControl": {
+            "commitHash": "524fb23ecb8d4c7be62c5c9bfbea393dbb046bed",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Fsrc%2Fvulnerabilities%2Fpath_traversal.py&version=GC524fb23ecb8d4c7be62c5c9bfbea393dbb046bed&line=19&lineEnd=19&lineStartColumn=15&lineEndColumn=23&lineStyle=plain"
+          },
+          "filePath": "src/vulnerabilities/path_traversal.py",
+          "isValidGitPath": true,
+          "region": {
+            "lineStart": 19,
+            "lineEnd": 0,
+            "columnStart": 15,
+            "columnEnd": 23
+          },
+          "additionalProperties": null
+        },
+        {
+          "versionControl": {
+            "commitHash": "8e804fe0e7289c86d4469416d48462436d15ae0c",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Fsrc%2Fvulnerabilities%2Fpath_traversal.py&version=GC8e804fe0e7289c86d4469416d48462436d15ae0c&line=19&lineEnd=19&lineStartColumn=15&lineEndColumn=23&lineStyle=plain"
+          },
+          "filePath": "src/vulnerabilities/path_traversal.py",
+          "isValidGitPath": true,
+          "region": {
+            "lineStart": 19,
+            "lineEnd": 0,
+            "columnStart": 15,
+            "columnEnd": 23
+          },
+          "additionalProperties": null
+        },
+        {
+          "versionControl": {
+            "commitHash": "ea28eb217a1ceb7e98167db3c3e26ce48277d617",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Fsrc%2Fvulnerabilities%2Fpath_traversal.py&version=GCea28eb217a1ceb7e98167db3c3e26ce48277d617&line=19&lineEnd=19&lineStartColumn=15&lineEndColumn=23&lineStyle=plain"
+          },
+          "filePath": "src/vulnerabilities/path_traversal.py",
+          "isValidGitPath": true,
+          "region": {
+            "lineStart": 19,
+            "lineEnd": 0,
+            "columnStart": 15,
+            "columnEnd": 23
+          },
+          "additionalProperties": null
+        }
+      ],
+      "logicalLocations": [],
+      "hasTrustedSourceOrigin": true
+    },
+    {
+      "alertId": 3,
+      "severity": "critical",
+      "title": "Full server-side request forgery (py/full-ssrf)",
+      "tools": [
+        {
+          "name": "CodeQL",
+          "rules": [
+            {
+              "opaqueId": "py/full-ssrf",
+              "friendlyName": "py/full-ssrf",
+              "description": "Making a network request to a URL that is fully user-controlled allows for request forgery attacks.",
+              "resources": "\n* [OWASP SSRF article](https://owasp.org/www-community/attacks/Server_Side_Request_Forgery)\n* [PortSwigger SSRF article](https://portswigger.net/web-security/ssrf)\n* Common Weakness Enumeration: [CWE-918](https://cwe.mitre.org/data/definitions/918.html).\n",
+              "helpMessage": "# Full server-side request forgery\nDirectly incorporating user input into an HTTP request without validating the input can facilitate server-side request forgery (SSRF) attacks. In these attacks, the request may be changed, directed at a different server, or via a different protocol. This can allow the attacker to obtain sensitive information or perform actions with escalated privilege.\n\nWe make a distinctions between how much of the URL an attacker can control:\n\n* **Full SSRF**: where the full URL can be controlled.\n* **Partial SSRF**: where only part of the URL can be controlled, such as the path component of a URL to a hardcoded domain.\n\n\nPartial control of a URL is often much harder to exploit. Therefore we have created a separate query for each of these.\n\nThis query covers full SSRF, to find partial SSRF use the `py/partial-ssrf` query.\n\n\n## Recommendation\nTo guard against SSRF attacks you should avoid putting user-provided input directly into a request URL. On the application level, maintain a list of authorized URLs on the server and choose from that list based on the input provided. If that is not possible, one should verify the IP address for all user-controlled requests to ensure they are not private. This requires saving the verified IP address of each domain, then utilizing a custom HTTP adapter to ensure that future requests to that domain use the verified IP address. On the network level, you can segment the vulnerable application into its own LAN or block access to specific devices.\n\n\n## Example\nThe following example shows code vulnerable to a full SSRF attack, because it uses untrusted input (HTTP request parameter) directly to construct a URL. By using `evil.com#` as the `target` value, the requested URL will be `https://evil.com#.example.com/data/`. It also shows how to remedy the problem by using the user input select a known fixed string.\n\n\n```python\nimport requests\nfrom flask import Flask, request\n\napp = Flask(__name__)\n\n@app.route(\"/full_ssrf\")\ndef full_ssrf():\n    target = request.args[\"target\"]\n\n    # BAD: user has full control of URL\n    resp = requests.get(\"https://\" + target + \".example.com/data/\")\n\n    # GOOD: `subdomain` is controlled by the server.\n    subdomain = \"europe\" if target == \"EU\" else \"world\"\n    resp = requests.get(\"https://\" + subdomain + \".example.com/data/\")\n\n```\n\n## Example\nThe following example shows code vulnerable to a partial SSRF attack, because it uses untrusted input (HTTP request parameter) directly to construct a URL. By using `../transfer-funds-to/123?amount=456` as the `user_id` value, the requested URL will be `https://api.example.com/transfer-funds-to/123?amount=456`. It also shows how to remedy the problem by validating the input.\n\n\n```python\nimport requests\nfrom flask import Flask, request\n\napp = Flask(__name__)\n\n@app.route(\"/partial_ssrf\")\ndef partial_ssrf():\n    user_id = request.args[\"user_id\"]\n\n    # BAD: user can fully control the path component of the URL\n    resp = requests.get(\"https://api.example.com/user_info/\" + user_id)\n\n    if user_id.isalnum():\n        # GOOD: user_id is restricted to be alpha-numeric, and cannot alter path component of URL\n        resp = requests.get(\"https://api.example.com/user_info/\" + user_id)\n\n```\n\n## References\n* [OWASP SSRF article](https://owasp.org/www-community/attacks/Server_Side_Request_Forgery)\n* [PortSwigger SSRF article](https://portswigger.net/web-security/ssrf)\n* Common Weakness Enumeration: [CWE-918](https://cwe.mitre.org/data/definitions/918.html).\n",
+              "tags": [
+                "security",
+                "external/cwe/cwe-918"
+              ],
+              "additionalProperties": {}
+            }
+          ]
+        }
+      ],
+      "dismissal": null,
+      "repositoryId": null,
+      "projectId": "00000000-0000-0000-0000-000000000000",
+      "repositoryUrl": "https://dev.azure.com/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61",
+      "gitRef": "refs/heads/main",
+      "alertType": "code",
+      "firstSeenDate": "2026-04-13T07:33:09.4849235Z",
+      "lastSeenDate": "2026-04-14T07:27:39.9658048Z",
+      "fixedDate": null,
+      "introducedDate": "2026-04-13T07:30:29Z",
+      "state": "active",
+      "physicalLocations": [
+        {
+          "versionControl": {
+            "commitHash": "524fb23ecb8d4c7be62c5c9bfbea393dbb046bed",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Fsrc%2Fvulnerabilities%2Fssrf.py&version=GC524fb23ecb8d4c7be62c5c9bfbea393dbb046bed&line=21&lineEnd=21&lineStartColumn=16&lineEndColumn=44&lineStyle=plain"
+          },
+          "filePath": "src/vulnerabilities/ssrf.py",
+          "isValidGitPath": true,
+          "region": {
+            "lineStart": 21,
+            "lineEnd": 0,
+            "columnStart": 16,
+            "columnEnd": 44
+          },
+          "additionalProperties": null
+        },
+        {
+          "versionControl": {
+            "commitHash": "8e804fe0e7289c86d4469416d48462436d15ae0c",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Fsrc%2Fvulnerabilities%2Fssrf.py&version=GC8e804fe0e7289c86d4469416d48462436d15ae0c&line=21&lineEnd=21&lineStartColumn=16&lineEndColumn=44&lineStyle=plain"
+          },
+          "filePath": "src/vulnerabilities/ssrf.py",
+          "isValidGitPath": true,
+          "region": {
+            "lineStart": 21,
+            "lineEnd": 0,
+            "columnStart": 16,
+            "columnEnd": 44
+          },
+          "additionalProperties": null
+        },
+        {
+          "versionControl": {
+            "commitHash": "ea28eb217a1ceb7e98167db3c3e26ce48277d617",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Fsrc%2Fvulnerabilities%2Fssrf.py&version=GCea28eb217a1ceb7e98167db3c3e26ce48277d617&line=21&lineEnd=21&lineStartColumn=16&lineEndColumn=44&lineStyle=plain"
+          },
+          "filePath": "src/vulnerabilities/ssrf.py",
+          "isValidGitPath": true,
+          "region": {
+            "lineStart": 21,
+            "lineEnd": 0,
+            "columnStart": 16,
+            "columnEnd": 44
+          },
+          "additionalProperties": null
+        }
+      ],
+      "logicalLocations": [],
+      "hasTrustedSourceOrigin": true
+    },
+    {
+      "alertId": 2,
+      "severity": "high",
+      "title": "Flask app is run in debug mode (py/flask-debug)",
+      "tools": [
+        {
+          "name": "CodeQL",
+          "rules": [
+            {
+              "opaqueId": "py/flask-debug",
+              "friendlyName": "py/flask-debug",
+              "description": "Running a Flask app in debug mode may allow an attacker to run arbitrary code through the Werkzeug debugger.",
+              "resources": "\n* Flask Quickstart Documentation: [Debug Mode](http://flask.pocoo.org/docs/1.0/quickstart/#debug-mode).\n* Werkzeug Documentation: [Debugging Applications](http://werkzeug.pocoo.org/docs/0.14/debug/).\n* Common Weakness Enumeration: [CWE-215](https://cwe.mitre.org/data/definitions/215.html).\n* Common Weakness Enumeration: [CWE-489](https://cwe.mitre.org/data/definitions/489.html).\n",
+              "helpMessage": "# Flask app is run in debug mode\nRunning a Flask application with debug mode enabled may allow an attacker to gain access through the Werkzeug debugger.\n\n\n## Recommendation\nEnsure that Flask applications that are run in a production environment have debugging disabled.\n\n\n## Example\nRunning the following code starts a Flask webserver that has debugging enabled. By visiting `/crash`, it is possible to gain access to the debugger, and run arbitrary code through the interactive debugger.\n\n\n```python\nfrom flask import Flask\n\napp = Flask(__name__)\n\n@app.route('/crash')\ndef main():\n    raise Exception()\n\napp.run(debug=True)\n\n```\n\n## References\n* Flask Quickstart Documentation: [Debug Mode](http://flask.pocoo.org/docs/1.0/quickstart/#debug-mode).\n* Werkzeug Documentation: [Debugging Applications](http://werkzeug.pocoo.org/docs/0.14/debug/).\n* Common Weakness Enumeration: [CWE-215](https://cwe.mitre.org/data/definitions/215.html).\n* Common Weakness Enumeration: [CWE-489](https://cwe.mitre.org/data/definitions/489.html).\n",
+              "tags": [
+                "security",
+                "external/cwe/cwe-215",
+                "external/cwe/cwe-489"
+              ],
+              "additionalProperties": {}
+            }
+          ]
+        }
+      ],
+      "dismissal": null,
+      "repositoryId": null,
+      "projectId": "00000000-0000-0000-0000-000000000000",
+      "repositoryUrl": "https://dev.azure.com/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61",
+      "gitRef": "refs/heads/main",
+      "alertType": "code",
+      "firstSeenDate": "2026-04-13T07:33:09.4849235Z",
+      "lastSeenDate": "2026-04-14T07:27:39.9658048Z",
+      "fixedDate": null,
+      "introducedDate": "2026-04-13T07:30:29Z",
+      "state": "active",
+      "physicalLocations": [
+        {
+          "versionControl": {
+            "commitHash": "524fb23ecb8d4c7be62c5c9bfbea393dbb046bed",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Fsrc%2Fapp.py&version=GC524fb23ecb8d4c7be62c5c9bfbea393dbb046bed&line=127&lineEnd=127&lineStartColumn=5&lineEndColumn=24&lineStyle=plain"
+          },
+          "filePath": "src/app.py",
+          "isValidGitPath": true,
+          "region": {
+            "lineStart": 127,
+            "lineEnd": 0,
+            "columnStart": 5,
+            "columnEnd": 24
+          },
+          "additionalProperties": null
+        },
+        {
+          "versionControl": {
+            "commitHash": "8e804fe0e7289c86d4469416d48462436d15ae0c",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Fsrc%2Fapp.py&version=GC8e804fe0e7289c86d4469416d48462436d15ae0c&line=127&lineEnd=127&lineStartColumn=5&lineEndColumn=24&lineStyle=plain"
+          },
+          "filePath": "src/app.py",
+          "isValidGitPath": true,
+          "region": {
+            "lineStart": 127,
+            "lineEnd": 0,
+            "columnStart": 5,
+            "columnEnd": 24
+          },
+          "additionalProperties": null
+        },
+        {
+          "versionControl": {
+            "commitHash": "ea28eb217a1ceb7e98167db3c3e26ce48277d617",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Fsrc%2Fapp.py&version=GCea28eb217a1ceb7e98167db3c3e26ce48277d617&line=127&lineEnd=127&lineStartColumn=5&lineEndColumn=24&lineStyle=plain"
+          },
+          "filePath": "src/app.py",
+          "isValidGitPath": true,
+          "region": {
+            "lineStart": 127,
+            "lineEnd": 0,
+            "columnStart": 5,
+            "columnEnd": 24
+          },
+          "additionalProperties": null
+        }
+      ],
+      "logicalLocations": [],
+      "hasTrustedSourceOrigin": true
+    },
+    {
+      "alertId": 1,
+      "severity": "critical",
+      "title": "Uncontrolled command line (py/command-line-injection)",
+      "tools": [
+        {
+          "name": "CodeQL",
+          "rules": [
+            {
+              "opaqueId": "py/command-line-injection",
+              "friendlyName": "py/command-line-injection",
+              "description": "Using externally controlled strings in a command line may allow a malicious user to change the meaning of the command.",
+              "resources": "\n* OWASP: [Command Injection](https://www.owasp.org/index.php/Command_Injection).\n* Common Weakness Enumeration: [CWE-78](https://cwe.mitre.org/data/definitions/78.html).\n* Common Weakness Enumeration: [CWE-88](https://cwe.mitre.org/data/definitions/88.html).\n",
+              "helpMessage": "# Uncontrolled command line\nCode that passes user input directly to `exec`, `eval`, or some other library routine that executes a command, allows the user to execute malicious code.\n\n\n## Recommendation\nIf possible, use hard-coded string literals to specify the command to run or the library to load. Instead of passing the user input directly to the process or library function, examine the user input and then choose among hard-coded string literals.\n\nIf the applicable libraries or commands cannot be determined at compile time, then add code to verify that the user input string is safe before using it.\n\n\n## Example\nThe following example shows two functions. The first is unsafe as it takes a shell script that can be changed by a user, and passes it straight to `subprocess.call()` without examining it first. The second is safe as it selects the command from a predefined allowlist.\n\n\n```python\n\nurlpatterns = [\n    # Route to command_execution\n    url(r'^command-ex1$', command_execution_unsafe, name='command-execution-unsafe'),\n    url(r'^command-ex2$', command_execution_safe, name='command-execution-safe')\n]\n\nCOMMANDS = {\n    \"list\" :\"ls\",\n    \"stat\" : \"stat\"\n}\n\ndef command_execution_unsafe(request):\n    if request.method == 'POST':\n        action = request.POST.get('action', '')\n        #BAD -- No sanitizing of input\n        subprocess.call([\"application\", action])\n\ndef command_execution_safe(request):\n    if request.method == 'POST':\n        action = request.POST.get('action', '')\n        #GOOD -- Use an allowlist\n        subprocess.call([\"application\", COMMANDS[action]])\n\n```\n\n## References\n* OWASP: [Command Injection](https://www.owasp.org/index.php/Command_Injection).\n* Common Weakness Enumeration: [CWE-78](https://cwe.mitre.org/data/definitions/78.html).\n* Common Weakness Enumeration: [CWE-88](https://cwe.mitre.org/data/definitions/88.html).\n",
+              "tags": [
+                "correctness",
+                "security",
+                "external/cwe/cwe-078",
+                "external/cwe/cwe-088"
+              ],
+              "additionalProperties": {}
+            }
+          ]
+        }
+      ],
+      "dismissal": null,
+      "repositoryId": null,
+      "projectId": "00000000-0000-0000-0000-000000000000",
+      "repositoryUrl": "https://dev.azure.com/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61",
+      "gitRef": "refs/heads/main",
+      "alertType": "code",
+      "firstSeenDate": "2026-04-13T07:33:09.4849235Z",
+      "lastSeenDate": "2026-04-14T07:27:39.9658048Z",
+      "fixedDate": null,
+      "introducedDate": "2026-04-13T07:30:29Z",
+      "state": "active",
+      "physicalLocations": [
+        {
+          "versionControl": {
+            "commitHash": "524fb23ecb8d4c7be62c5c9bfbea393dbb046bed",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Fsrc%2Fvulnerabilities%2Fcommand_injection.py&version=GC524fb23ecb8d4c7be62c5c9bfbea393dbb046bed&line=22&lineEnd=22&lineStartColumn=9&lineEndColumn=28&lineStyle=plain"
+          },
+          "filePath": "src/vulnerabilities/command_injection.py",
+          "isValidGitPath": true,
+          "region": {
+            "lineStart": 22,
+            "lineEnd": 0,
+            "columnStart": 9,
+            "columnEnd": 28
+          },
+          "additionalProperties": null
+        },
+        {
+          "versionControl": {
+            "commitHash": "8e804fe0e7289c86d4469416d48462436d15ae0c",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Fsrc%2Fvulnerabilities%2Fcommand_injection.py&version=GC8e804fe0e7289c86d4469416d48462436d15ae0c&line=22&lineEnd=22&lineStartColumn=9&lineEndColumn=28&lineStyle=plain"
+          },
+          "filePath": "src/vulnerabilities/command_injection.py",
+          "isValidGitPath": true,
+          "region": {
+            "lineStart": 22,
+            "lineEnd": 0,
+            "columnStart": 9,
+            "columnEnd": 28
+          },
+          "additionalProperties": null
+        },
+        {
+          "versionControl": {
+            "commitHash": "ea28eb217a1ceb7e98167db3c3e26ce48277d617",
+            "itemUrl": "https://dev.azure.com:443/lin-yuhong/6b136bfd-5470-49e5-8d6c-2e8f507b06cd/_git/e5067647-2bc0-4264-a4be-b1043e5a0c61?path=%2Fsrc%2Fvulnerabilities%2Fcommand_injection.py&version=GCea28eb217a1ceb7e98167db3c3e26ce48277d617&line=22&lineEnd=22&lineStartColumn=9&lineEndColumn=28&lineStyle=plain"
+          },
+          "filePath": "src/vulnerabilities/command_injection.py",
+          "isValidGitPath": true,
+          "region": {
+            "lineStart": 22,
+            "lineEnd": 0,
+            "columnStart": 9,
+            "columnEnd": 28
+          },
+          "additionalProperties": null
+        }
+      ],
+      "logicalLocations": [],
+      "hasTrustedSourceOrigin": true
+    }
+  ]
+}
