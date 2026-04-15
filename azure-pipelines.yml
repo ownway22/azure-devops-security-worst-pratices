@@ -32,7 +32,7 @@ steps:
   - task: AdvancedSecurity-Codeql-Analyze@1
     displayName: "[程式碼掃描] 執行分析並上傳 CodeQL 結果"
 
-  # ── 發佈 SARIF 掃描結果到 Azure Artifacts Feed ─────────────────────────────
+  # ── 發佈 SARIF 掃描結果到 Build Artifacts ───────────────────────────────────
 
   # 步驟 3a：找到 CodeQL 產生的 SARIF 檔案並複製到 Staging 目錄
   - script: |
@@ -44,17 +44,12 @@ steps:
     displayName: "複製 SARIF 檔案到 Staging 目錄"
     condition: always()
 
-  # 步驟 3b：發佈 SARIF 檔案到 Azure Artifacts Feed（Universal Package）
-  - task: UniversalPackages@0
-    displayName: "發佈 SARIF 掃描結果到 Azure Artifacts Feed"
+  # 步驟 3b：發佈 SARIF 檔案到 Build Artifacts（Pipeline Run → Summary → Artifacts）
+  - task: PublishBuildArtifacts@1
+    displayName: "發佈 SARIF 掃描結果到 Build Artifacts"
     inputs:
-      command: publish
-      publishDirectory: $(Build.ArtifactStagingDirectory)/sarif
-      feedsToUsePublish: internal
-      vstsFeedPublish: security-artifacts
-      vstsFeedPackagePublish: codeql-sarif-results
-      versionOption: custom
-      versionPublish: 1.0.$(Build.BuildId)
+      pathToPublish: $(Build.ArtifactStagingDirectory)/sarif
+      artifactName: "CodeQL-SARIF-Results"
     condition: always()
 
   # ── 程式碼覆蓋率 ───────────────────────────────────────────────────────────
