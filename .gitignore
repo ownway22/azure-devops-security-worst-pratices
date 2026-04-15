@@ -57,3 +57,4 @@ htmlcov/
 
 # Speckit specification files
 .specify
+.specify/
